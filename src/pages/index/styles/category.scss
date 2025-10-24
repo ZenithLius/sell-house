@@ -1,0 +1,30 @@
+/* 前台类目 */
+.category {
+  margin: 20rpx 0 0;
+  padding: 10rpx 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin: 40rpx 0;
+
+  .category-item {
+    width: 150rpx;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+
+    .icon {
+      width: 93rpx;
+      height: 93rpx;
+    }
+    .text {
+      font-family: Source Han Sans CN;
+      font-weight: 400;
+      font-size: 26rpx;
+      color: #232323;
+      margin-top: 17rpx;
+    }
+  }
+}

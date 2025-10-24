@@ -1,0 +1,334 @@
+{
+  // 组件自动引入规则
+  "easycom": {
+    // 是否开启自动扫描
+    "autoscan": true,
+    // 以正则方式自定义组件匹配规则
+    "custom": {
+      // uni-ui 规则如下配置
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+      // 以 Sh 开头的组件，在 components 文件夹中查找引入（需要重启服务器）
+      "^Sh(.*)": "@/components/Sh$1.vue"
+    }
+  },
+  "pages": [
+    //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
+      "path": "pages/customers/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "获客",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/house/index",
+      "style": {
+        "navigationBarTitleText": "卖房",
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom"
+
+      }
+    },
+    {
+      "path": "pages/consult/index",
+      "style": {
+        "navigationBarTitleText": "资讯",
+        "navigationStyle": "custom",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/my/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white",
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/hot/hot",
+      "style": {
+        "navigationBarTitleText": "热门推荐"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  // 设置 TabBar
+  "tabBar": {
+    "color": "#333",
+    "selectedColor": "#863FCE",
+    "backgroundColor": "",
+    "borderStyle": "white",
+    "list": [
+      {
+        "text": "首页",
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabs/indexPage.png",
+        "selectedIconPath": "static/tabs/indexPageActive.png"
+      },
+      // {
+      //   "text": "获客",
+      //   "pagePath": "pages/customers/customers",
+      //   "iconPath": "static/tabs/category_default.png",
+      //   "selectedIconPath": "static/tabs/category_selected.png"
+      // },
+      {
+        "text": "获客",
+        "pagePath": "pages/customers/index",
+        "iconPath": "static/tabs/customer.png",
+        "selectedIconPath": "static/tabs/customerActive.png"
+      },
+      {
+        "text": "卖房",
+        "pagePath": "pages/house/index",
+        "iconPath": "static/tabs/sellHouse.png",
+        "selectedIconPath": "static/tabs/sellHuseActive.png"
+      },
+      {
+        "text": "资讯",
+        "pagePath": "pages/consult/index",
+        "iconPath": "static/tabs/news.png",
+        "selectedIconPath": "static/tabs/newsActive.png"
+      },
+      {
+        "text": "我的",
+        "pagePath": "pages/my/index",
+        "iconPath": "static/tabs/my.png",
+        "selectedIconPath": "static/tabs/myActive.png"
+      }
+    ]
+  },
+  // 分包加载规则
+  "subPackages": [
+
+
+    {
+      "root": "pagesIndex",
+      "pages": [
+        {
+          "path": "home/detail",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "房源详情"
+          }
+        },
+        {
+          "path": "home/feedback",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "我要反馈"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pagesCustomer",
+      "pages": [
+        {
+          "path": "editInfo",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "编辑信息"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pagesConsult",
+      "pages": [
+        {
+          "path": "detailConsult",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "详情"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pagesMy",
+      "pages": [
+        {
+          "path": "followRecord/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "关注记录"
+          }
+        },
+        {
+          "path": "viewHistory/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "浏览记录"
+          }
+        },
+        {
+          "path": "feedback/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "反馈记录"
+          }
+        },
+        {
+          "path": "message/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "消息"
+          }
+        },
+        {
+          "path": "myHouse/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "我的卖房"
+          }
+        },
+        {
+          "path": "contact/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "客服热线"
+          }
+        },
+        {
+          "path": "about/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "关于我们"
+          }
+        },
+        {
+          "path": "authentication/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "身份认证",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/sign",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "签约",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/investor",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "选择投资人",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/renovation",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "装修记录"
+          }
+        },
+        {
+          "path": "authentication/followRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "跟进记录",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/addRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "新增记录",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/fee",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "费用",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/dealRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "成交记录",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/addDeal",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "新增成交",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/procedure",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "手续管理",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/addProcedure",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "新增手续",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "authentication/detail",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "查看",
+            "disableScroll": true
+          }
+        }
+      ]
+    }
+
+
+
+
+
+
+
+
+  ]
+  // 分包预下载规则
+  // "preloadRule": {
+  //   "pages/my/my": {
+  //     "network": "all",
+  //     "packages": ["pagesMember"]
+  //   }
+  // }
+}
