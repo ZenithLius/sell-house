@@ -176,7 +176,7 @@ const getStatusColor = (status: string): string => {
 }
 
 .list-container {
-  padding: 20rpx 32rpx;
+  padding: 0rpx 32rpx 20rpx 32rpx;
 }
 
 .auth-item {

@@ -83,10 +83,15 @@ const handleSelect = (id: string | number) => {
           <image
             v-if="selectedId === item.id"
             class="select-icon"
-            src="@/static/my/selected.png"
+            src="@/pagesMy/static/selected.png"
             mode="aspectFit"
           />
-          <image v-else class="select-icon" src="@/static/my/willSelect.png" mode="aspectFit" />
+          <image
+            v-else
+            class="select-icon"
+            src="@/pagesMy/static/willSelect.png"
+            mode="aspectFit"
+          />
         </view>
       </view>
 
@@ -113,7 +118,7 @@ const handleSelect = (id: string | number) => {
 .investor-list {
   flex: 1;
   width: 100%;
-  height: calc(100vh - env(safe-area-inset-bottom) - 300rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
   background: #ffffff;
 }
 
@@ -132,7 +137,6 @@ const handleSelect = (id: string | number) => {
   background: #ffffff;
   border-radius: 20rpx;
   border-bottom: 1px solid #f3f3f3;
-  cursor: pointer;
   justify-content: space-between;
 }
 .left {
@@ -154,7 +158,6 @@ const handleSelect = (id: string | number) => {
   height: 30rpx;
 }
 
-// 内容区域
 .item-content {
   flex: 1;
   display: flex;

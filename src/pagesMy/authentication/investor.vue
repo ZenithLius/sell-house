@@ -19,7 +19,12 @@
         @loadMore="handleLoadMore"
         @select="handleSelectInvestor"
       />
-      <ShBottomBtns :buttons="bottomButtons" @click="handleButtonClick" />
+      <ShBottomBtns
+        :backgroundColor="'#fff'"
+        :paddingBottom="130"
+        :buttons="bottomButtons"
+        @click="handleButtonClick"
+      />
     </view>
     <BottomTabbar />
   </view>

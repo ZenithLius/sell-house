@@ -94,7 +94,7 @@ const handleBack = () => {
     animation: slideDown 0.3s ease-out;
   }
   .content {
-    height: calc(100vh - env(safe-area-inset-bottom) - 200rpx);
+    height: calc(100vh - env(safe-area-inset-bottom) - 220rpx);
     background: #fff;
   }
 }

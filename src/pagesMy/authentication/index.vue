@@ -41,11 +41,13 @@
         <view v-else-if="type === 'staff'" class="staff-list">
           <ShCustomTabs v-model="staffTabValue" :tabs="staffTabs" @change="handleStaffTabChange" />
           <SearchBox
+            :back-white="true"
             v-model="staffSearchKeyword"
             placeholder="搜索房源名称"
             @search="handleStaffSearch"
           />
           <DateFilter
+            :showLabel="false"
             v-model:start-date="staffDateRange.startDate"
             v-model:end-date="staffDateRange.endDate"
             @date-change="handleStaffDateChange"

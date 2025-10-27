@@ -125,14 +125,15 @@ $card-radius: 22rpx;
     font-weight: 400;
     height: 32rpx;
     border-radius: 4rpx;
-    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .house-info {
     display: flex;
     justify-content: space-between;
     margin-bottom: 32rpx;
-    border-bottom: 1rpx solid #f0f0f0;
   }
 
   .info-item {
@@ -162,7 +163,6 @@ $card-radius: 22rpx;
     color: #797979;
   }
 
-  // 中介费
   .commission-container {
     display: flex;
     align-items: center;

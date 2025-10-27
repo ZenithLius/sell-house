@@ -80,7 +80,7 @@ const handleItemClick = (item: ReplyFeedbackItem) => {
 
         <!-- 回复部分 -->
         <view class="reply-section">
-          <image class="reply-icon" src="@/static/my/reply.png" mode="scaleToFill" />
+          <image class="reply-icon" src="@/pagesMy/static/reply.png" mode="scaleToFill" />
           <view class="reply-time">回复 {{ item.replyTime }}</view>
           <view class="reply-content">{{ item.replyContent }}</view>
         </view>
@@ -107,7 +107,7 @@ const handleItemClick = (item: ReplyFeedbackItem) => {
 
 <style lang="scss" scoped>
 .feedback-reply-list {
-  height: calc(100vh - 200rpx);
+  height: calc(100vh - 300rpx);
   width: 100%;
   background: #f5f5f5;
 }

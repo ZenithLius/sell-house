@@ -193,20 +193,17 @@ const handleSubmit = () => {
 
     .edit-icon-wrapper {
       position: absolute;
-      right: 0;
+      right: -3rpx;
       bottom: 0;
-      width: 48rpx;
-      height: 48rpx;
-      background: #863fce;
-      border-radius: 24rpx;
+      width: 40rpx;
+      height: 40rpx;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3rpx solid #fff;
 
       .edit-icon {
-        width: 24rpx;
-        height: 24rpx;
+        width: 40rpx;
+        height: 40rpx;
       }
     }
   }
@@ -321,7 +318,6 @@ const handleSubmit = () => {
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   background-color: #fff;
-  box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.05);
 
   .submit-btn {
     width: 532rpx;

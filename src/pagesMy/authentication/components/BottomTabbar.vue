@@ -35,26 +35,26 @@ const tabList = ref<TabItem[]>([
   {
     key: 'myHouse',
     text: '我的房源',
-    icon: '/static/my/myHouse.png',
-    activeIcon: '/static/my/myHouseActive.png',
+    icon: '/pagesMy/static/myHouse.png',
+    activeIcon: '/pagesMy/static/myHouseActive.png',
   },
   {
     key: 'photo',
     text: '实勘房源',
-    icon: '/static/my/myPhoto.png',
-    activeIcon: '/static/my/myPhotoActive.png',
+    icon: '/pagesMy/static/myPhoto.png',
+    activeIcon: '/pagesMy/static/myPhotoActive.png',
   },
   {
     key: 'calculator',
     text: '计算器',
-    icon: '/static/my/myCalculator.png',
-    activeIcon: '/static/my/myCalculatorActive.png',
+    icon: '/pagesMy/static/myCalculator.png',
+    activeIcon: '/pagesMy/static/myCalculatorActive.png',
   },
   {
     key: 'card',
     text: '员工打卡',
-    icon: '/static/my/myCard.png',
-    activeIcon: '/static/my/myCardActive.png',
+    icon: '/pagesMy/static/myCard.png',
+    activeIcon: '/pagesMy/static/myCardActive.png',
   },
 ])
 
@@ -66,7 +66,9 @@ const handleTabClick = (key: TabKey) => {
       console.log('我的房源')
       break
     case 'photo':
-      console.log('实勘房源')
+      uni.navigateTo({
+        url: '/pagesMy/siteInspection/index',
+      })
       break
     case 'calculator':
       console.log('计算器')
@@ -82,7 +84,7 @@ const handleTabClick = (key: TabKey) => {
 <style lang="scss" scoped>
 .bottom-tabbar {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom) - 15rpx);
+  bottom: calc(env(safe-area-inset-bottom) - 5rpx);
   left: 0;
   right: 0;
   height: 100rpx;
@@ -100,7 +102,8 @@ const handleTabClick = (key: TabKey) => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 10rpx 0;
+    // padding: 10rpx 0;
+    margin: 15rpx 0;
 
     .tab-icon {
       width: 41rpx;
@@ -110,7 +113,7 @@ const handleTabClick = (key: TabKey) => {
 
     .tab-text {
       font-size: 22rpx;
-      color: #666;
+      color: #333;
       transition: color 0.3s;
     }
 

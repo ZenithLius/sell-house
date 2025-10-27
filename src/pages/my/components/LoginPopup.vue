@@ -4,15 +4,20 @@
       <view class="popup-content">
         <!-- 左上角图标和标题 -->
         <view class="header">
-          <image class="logo" src="@/static/my/loginLogo.png" mode="aspectFit"></image>
+          <image class="logo" src="@/pagesMy/static/loginLogo.png" mode="aspectFit"></image>
           <text class="title">欢迎使用</text>
         </view>
 
         <!-- 微信授权登录按钮 -->
-        <view class="login-btn" @tap="handleWxLogin">
-          <image class="wx-icon" src="@/static/my/weixin.png" mode="aspectFit"></image>
+        <button
+          class="login-btn"
+          open-type="getPhoneNumber"
+          @tap="handleWxLogin"
+          @getphonenumber="onGetphonenumber"
+        >
+          <image class="wx-icon" src="@/pagesMy/static/weixin.png" mode="aspectFit"></image>
           <text>微信授权登录</text>
-        </view>
+        </button>
 
         <!-- 取消授权按钮 -->
         <view class="cancel-btn" @tap="handleCancel">
@@ -40,21 +45,20 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useMemberStore } from '@/stores'
+import { postLoginWxMinAPI } from '@/services/login'
 
 const popup = ref<any>(null)
 const agreed = ref(false)
 
-// 打开弹窗
 const open = () => {
   popup.value?.open()
 }
 
-// 关闭弹窗
 const close = () => {
   popup.value?.close()
 }
 
-// 微信授权登录
 const handleWxLogin = () => {
   if (!agreed.value) {
     uni.showToast({
@@ -63,24 +67,64 @@ const handleWxLogin = () => {
     })
     return
   }
-  console.log('微信授权登录')
+  // #ifndef MP-WEIXIN
   uni.showToast({
-    title: '微信登录功能待实现',
+    title: '请在微信小程序中使用该功能',
     icon: 'none',
   })
+  // #endif
 }
 
-// 取消授权
+const onGetphonenumber: UniHelper.ButtonOnGetphonenumber = async (ev) => {
+  if (!agreed.value) {
+    uni.showToast({
+      title: '请先阅读并同意协议',
+      icon: 'none',
+    })
+    return
+  }
+  // #ifdef MP-WEIXIN
+  try {
+    const { encryptedData, iv } = ev.detail
+    // const { code } = await wx.login()
+    console.log('encryptedData', encryptedData)
+    console.log('iv', iv)
+    if (!encryptedData || !iv) {
+      uni.showToast({
+        title: '授权失败或已取消',
+        icon: 'none',
+      })
+      return
+    }
+    const { code } = await wx.login()
+    console.log('code', code)
+    console.log('encryptedData', encryptedData)
+    console.log('iv', iv)
+    const res = await postLoginWxMinAPI({ code, encryptedData, iv })
+    const memberStore = useMemberStore()
+    memberStore.setProfile(res.result)
+    uni.showToast({
+      icon: 'success',
+      title: '登录成功',
+    })
+    close()
+  } catch (err) {
+    uni.showToast({
+      title: '登录失败，请重试',
+      icon: 'none',
+    })
+  }
+  // #endif
+}
+
 const handleCancel = () => {
   close()
 }
 
-// 协议勾选变化
 const handleAgreementChange = (e: any) => {
   agreed.value = e.detail.value.length > 0
 }
 
-// 查看安全协议
 const handleProtocol = () => {
   console.log('查看安全协议')
   uni.showToast({
@@ -89,7 +133,6 @@ const handleProtocol = () => {
   })
 }
 
-// 查看隐私政策
 const handlePrivacy = () => {
   console.log('查看隐私政策')
   uni.showToast({
@@ -98,7 +141,6 @@ const handlePrivacy = () => {
   })
 }
 
-// 暴露方法给父组件
 defineExpose({
   open,
   close,
@@ -157,6 +199,9 @@ defineExpose({
       align-items: center;
       justify-content: center;
       margin: 0 auto;
+      &::after {
+        border: none;
+      }
 
       .wx-icon {
         width: 43rpx;

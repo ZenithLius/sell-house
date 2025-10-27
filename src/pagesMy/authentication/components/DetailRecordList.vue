@@ -59,7 +59,7 @@ const handleItemClick = (item: RecordItem) => {
     <view class="list-container">
       <view v-for="item in list" :key="item.id" class="record-item" @click="handleItemClick(item)">
         <!-- 左侧图标 -->
-        <image class="record-icon" src="/static/my/detailLeft.png" mode="aspectFit" />
+        <image class="record-icon" src="@/pagesMy/static/detailLeft.png" mode="aspectFit" />
 
         <!-- 内容区域 -->
         <view class="record-content">

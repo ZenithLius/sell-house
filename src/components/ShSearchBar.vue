@@ -74,7 +74,7 @@ const handleButtonClick = () => {
   font-weight: 400;
   font-size: 22rpx;
   color: #ffffff;
-  padding: 15rpx;
+  margin-right: 15rpx;
   width: 91rpx;
   height: 38rpx;
   background: #863fce;

@@ -88,7 +88,7 @@ const handleItemClick = (item: NoticeItem) => {
 
 <style lang="scss" scoped>
 .notice-list {
-  height: calc(100vh - 200rpx);
+  height: calc(100vh - 300rpx);
   width: 100%;
 }
 
@@ -100,8 +100,8 @@ const handleItemClick = (item: NoticeItem) => {
   position: relative;
   margin: 0 30rpx 24rpx;
   padding: 34rpx 18rpx;
-  background: linear-gradient(135deg, #f8f5ff 0%, #faf8ff 100%);
-  border-radius: 16rpx;
+  background: #faf5ff;
+  border-radius: 20rpx;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -148,8 +148,8 @@ const handleItemClick = (item: NoticeItem) => {
 
 .quote-icon {
   position: absolute;
-  right: 24rpx;
-  bottom: 24rpx;
+  right: 0rpx;
+  bottom: 0rpx;
   width: 89rpx;
   height: 68rpx;
   opacity: 0.3;

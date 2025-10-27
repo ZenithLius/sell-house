@@ -62,7 +62,7 @@ const handleViewDetail = (item: MessageItem) => {
         <!-- 头部：图标、标题、日期 -->
         <view class="item-header">
           <view class="header-left">
-            <image class="message-logo" src="@/static/my/messageLogo.png" mode="aspectFill" />
+            <image class="message-logo" src="@/pagesMy/static/messageLogo.png" mode="aspectFill" />
             <text class="item-title">{{ item.title }}</text>
           </view>
           <text class="item-date">{{ item.date }}</text>
@@ -83,7 +83,7 @@ const handleViewDetail = (item: MessageItem) => {
         <!-- 底部：查看详情按钮 -->
         <view class="item-footer" @tap="handleViewDetail(item)">
           <text class="footer-text">查看详情</text>
-          <image class="arrow-icon" src="@/static/my/messageRight.png" mode="aspectFit" />
+          <image class="arrow-icon" src="@/pagesMy/static/messageRight.png" mode="aspectFit" />
         </view>
       </view>
 
@@ -108,7 +108,7 @@ const handleViewDetail = (item: MessageItem) => {
 
 <style lang="scss" scoped>
 .message-list {
-  height: calc(100vh - 200rpx);
+  height: calc(100vh - 300rpx);
   width: 100%;
   background: #f5f5f5;
 }

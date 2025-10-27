@@ -35,7 +35,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  paddingBottom: 100,
+  paddingBottom: 130,
   backgroundColor: '#f7f8fc',
 })
 

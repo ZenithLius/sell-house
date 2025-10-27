@@ -9,7 +9,7 @@
     />
     <scroll-view class="content" scroll-y :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
       <view class="header-logo">
-        <image class="about-image" src="@/static/my/aboutus.png" mode="aspectFill"></image>
+        <image class="about-image" src="@/pagesMy/static/aboutus.png" mode="aspectFill"></image>
       </view>
 
       <view class="text-container">

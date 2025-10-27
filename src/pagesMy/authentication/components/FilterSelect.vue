@@ -208,8 +208,8 @@ const handleConfirm = () => {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 20rpx 32rpx;
-  background: #f7f8fc;
+  padding: 0rpx 32rpx 20rpx 32rpx;
+  background: #f5f5f5;
 }
 
 .filter-item {
@@ -218,22 +218,23 @@ const handleConfirm = () => {
   gap: 8rpx;
   padding: 12rpx 24rpx;
   cursor: pointer;
+  // border-radius: 32rpx;
 
-  &.active {
-    background: #efe8f6;
+  // &.active {
+  //   background: #efe8f6;
 
-    .filter-label {
-      color: #863fce;
-    }
+  //   .filter-label {
+  //     color: #863fce;
+  //   }
 
-    .filter-arrow {
-      color: #863fce;
-    }
-  }
+  //   .filter-arrow {
+  //     color: #863fce;
+  //   }
+  // }
 
-  &:active {
-    opacity: 0.8;
-  }
+  // &:active {
+  //   opacity: 0.8;
+  // }
 }
 
 .filter-label {

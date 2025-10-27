@@ -51,7 +51,7 @@ const fields: CustomFormField[] = [
     key: 'communityName',
     label: '手续状态',
     type: 'select',
-    placeholder: '请输入',
+    placeholder: '请选择',
     options: [
       { label: '完结', value: '完结' },
       { label: '放款', value: '放款' },

@@ -30,7 +30,7 @@ const back = () => {
 
 <style lang="scss">
 .drawer-header {
-  margin-top: -1rpx;
+  margin-top: 0rpx;
   position: relative;
   display: flex;
   align-items: center;

@@ -95,7 +95,7 @@ const handleItemClick = (item: FeedbackItem) => {
 
 <style lang="scss" scoped>
 .feedback-list {
-  height: calc(100vh - 200rpx);
+  height: calc(100vh - 300rpx);
   width: 100%;
   background: #f5f5f5;
 }

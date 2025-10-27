@@ -8,7 +8,7 @@
       class="navbar-fixed"
     />
     <view class="header-bg">
-      <image class="bg-image" src="@/static/my/bgpic.png"></image>
+      <image class="bg-image" src="@/pagesMy/static/bgpic.png"></image>
     </view>
     <view class="back" :style="{ top: safeAreaInsets!.top +10 + 'px' }">
       <image
@@ -23,13 +23,13 @@
     <view class="user-info-card" :style="{ marginTop: safeAreaInsets!.top + 60 + 'px' }">
       <!-- 编辑按钮 -->
       <view class="edit-btn" @tap="handleEdit">
-        <image class="edit-icon" src="@/static/my/edit.png"></image>
+        <image class="edit-icon" src="@/pagesMy/static/edit.png"></image>
         <text class="edit-text">编辑</text>
       </view>
 
       <!-- 头像 -->
       <view class="avatar-wrapper">
-        <image class="avatar" src="@/static/my/edit.png"></image>
+        <image class="avatar" src="@/pagesMy/static/edit.png"></image>
       </view>
 
       <!-- 用户信息 -->

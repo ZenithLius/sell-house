@@ -60,7 +60,7 @@ const handleMakeCall = (phone: string) => {
       <view v-for="item in list" :key="item.id" class="contact-item">
         <!-- 左侧图标 -->
         <view class="icon-wrapper">
-          <image class="phone-icon" src="@/static/my/contactPhone.png" mode="aspectFit" />
+          <image class="phone-icon" src="@/pagesMy/static/contactPhone.png" mode="aspectFit" />
         </view>
 
         <!-- 中间内容 -->

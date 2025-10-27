@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import CardPoster from './components/CardPoster.vue'
+
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
 const showNavbar = ref(true)
@@ -12,10 +14,12 @@ const back = () => {
 
 // 用户信息
 const userInfo = ref({
-  avatar: '/static/customers/share.png',
+  avatar: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
   name: '钟名白',
   role: '经理',
   phone: '13212345678',
+  company: '公司名称公司名称公司名称公司名称', // 公司名称
+  qrcode: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg', // 二维码图片，可以替换为实际的二维码
 })
 
 // 最近访客列表
@@ -32,6 +36,9 @@ const recentVisitors = ref([
   { id: 10, name: '沈妮称11', phone: '131***1234', date: '2025.09.09' },
 ])
 
+// 名片海报组件引用
+const cardPosterRef = ref()
+
 // 分享名片
 const shareCard = () => {
   uni.showToast({
@@ -40,12 +47,11 @@ const shareCard = () => {
   })
 }
 
-// 保存名片
+// 保存名片 - 打开名片生成弹窗
 const saveCard = () => {
-  uni.showToast({
-    title: '保存名片',
-    icon: 'none',
-  })
+  console.log('点击保存名片', cardPosterRef.value)
+  // 调用子组件的 openPoster 方法
+  cardPosterRef.value?.openPoster(userInfo.value)
 }
 
 // 修改信息
@@ -118,9 +124,12 @@ const onVisitorClick = (visitor: any) => {
           <text class="visitor-date">{{ visitor.date }}</text>
         </view>
 
-        <view class="space" :style="{ height: safeAreaInsets!.bottom + 20 + 'px'}"></view>
+        <view class="space" :style="{ height: safeAreaInsets!.bottom + 20 + 'px' }"></view>
       </scroll-view>
     </view>
+
+    <!-- 名片海报组件 -->
+    <CardPoster ref="cardPosterRef" />
   </view>
 </template>
 

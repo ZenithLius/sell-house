@@ -41,7 +41,7 @@
         </view>
       </view>
     </scroll-view>
-    <ShBottomBtns :buttons="bottomButtons" @click="handleButtonClick" />
+    <ShBottomBtns backgroundColor="#fff" :buttons="bottomButtons" @click="handleButtonClick" />
     <BottomTabbar />
   </view>
 </template>
@@ -201,7 +201,7 @@ const previewImage = (images: string[], currentUrl: string) => {
 .content {
   padding: 0 30rpx;
   background: #fff;
-  height: calc(100vh - env(safe-area-inset-bottom) - 200rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 240rpx);
 }
 
 .house-title {

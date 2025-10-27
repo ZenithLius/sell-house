@@ -169,7 +169,7 @@ $card-radius: 22rpx;
   }
 
   &__item {
-    padding: 12rpx 28rpx;
+    padding: 8rpx 28rpx;
     font-size: 26rpx;
     color: #555;
     font-size: 22rpx;

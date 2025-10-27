@@ -102,6 +102,7 @@ const handlePasswordUnlock = () => {
 }
 .smart-lock-container {
   background: #ffffff;
+  width: 100%;
   display: flex;
   flex-direction: column;
   padding-bottom: 200rpx;
@@ -109,6 +110,7 @@ const handlePasswordUnlock = () => {
 }
 
 .content {
+  width: 100%;
   flex: 1;
   padding: 40rpx 32rpx;
 }
@@ -123,6 +125,7 @@ const handlePasswordUnlock = () => {
   background: #ffffff;
   border-radius: 16rpx;
   padding: 32rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
 .step-header {

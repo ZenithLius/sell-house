@@ -1,5 +1,5 @@
 <template>
-  <view class="detail-page">
+  <view class="detail-page" :class="{ 'lock-mode': currentTab === 'lock' }">
     <!-- 自定义导航栏 -->
     <ShNavbar
       @back="handleBack"
@@ -48,20 +48,6 @@
       <FloatingActions @follow="handleFollow" @feedback="handleFeedback" />
     </view>
 
-    <!-- 电话tab内容 -->
-    <!-- <view v-show="currentTab === 'phone'" class="tab-content phone-content">
-      <view class="content-placeholder">
-        <text class="placeholder-text">电话功能</text>
-      </view>
-    </view> -->
-
-    <!-- 分享tab内容 -->
-    <!-- <view v-show="currentTab === 'share'" class="tab-content share-content">
-      <view class="content-placeholder">
-        <text class="placeholder-text">分享功能</text>
-      </view>
-    </view> -->
-
     <!-- 智能锁tab内容 -->
     <view v-show="currentTab === 'lock'" class="tab-content lock-content">
       <view class="content-placeholder">
@@ -98,11 +84,15 @@
 
     <!-- 分享弹窗 -->
     <SharePopup ref="sharePop" @share="handleShare" />
+
+    <!-- 海报组件 -->
+    <PosterComponent ref="posterRef" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import DetailBanner from './components/DetailBanner.vue'
 import DetailInfoSection from './components/DetailInfoSection.vue'
 import FloatingActions from './components/FloatingActions.vue'
@@ -111,6 +101,16 @@ import SurroundingSection, { type TrafficData } from './components/SurroundingSe
 import PhonePopup from './components/PhonePopup.vue'
 import SharePopup from './components/SharePopup.vue'
 import SmartLock from './components/SmartLock.vue'
+import PosterComponent from './components/PosterComponent.vue'
+
+// 配置微信小程序分享
+onShareAppMessage(() => {
+  return {
+    title: infoTitle.value || '推荐一套好房给你',
+    path: `/pagesIndex/home/detail?id=123`, // 分享路径，可以带参数
+    imageUrl: banners.value[0] || '', // 分享图片，使用第一张轮播图
+  }
+})
 
 const handleBack = () => {
   if (currentTab.value === 'lock') {
@@ -194,19 +194,49 @@ const handlePhoneCancel = () => {
   phonePop.value?.close()
   currentTab.value = 'home'
 }
-
+const posterRef = ref()
 const handleShare = (type: 'wechat' | 'download') => {
   currentTab.value = 'home'
   if (type === 'wechat') {
-    uni.showToast({
-      title: '分享到微信',
-      icon: 'none',
-    })
+    // 微信分享由 button open-type="share" 和 onShareAppMessage 处理
+    // 这里只需要关闭弹窗即可，分享面板会自动弹出
+    sharePop.value?.close()
   } else if (type === 'download') {
+    uni.downloadFile({
+      url: 'https://example.com/image1.jpg',
+      success: (res) => {
+        console.log('下载成功', res)
+      },
+      fail: (err) => {
+        console.log('下载失败', err)
+      },
+    })
+
     uni.showToast({
       title: '下载海报',
       icon: 'none',
     })
+    const posterData = {
+      title: '封闭小区高档社区 简装 近地铁站方便...',
+      images: [
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+        'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+      ],
+      price: '150万',
+      type: '二室一厅',
+      area: '155-188㎡',
+      year: '2014年',
+      purpose: '用途',
+      status: '刚需',
+      qrcode: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+    }
+
+    // 打开海报
+    posterRef.value.openPoster(posterData)
   }
 }
 const title = ref('首页')
@@ -356,8 +386,12 @@ const handlePasswordUnlock = () => {
 }
 .detail-page {
   min-height: 100vh;
-  background: #ffffff;
+  background: #f7f8fc;
   padding-bottom: 130rpx;
+
+  &.lock-mode {
+    background: #ffffff;
+  }
 }
 
 .tab-content {
@@ -390,7 +424,7 @@ const handlePasswordUnlock = () => {
 
 .bottom-tabbar {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom) - 15rpx);
+  bottom: calc(env(safe-area-inset-bottom) - 5rpx);
   left: 0;
   right: 0;
   height: 100rpx;
@@ -408,7 +442,8 @@ const handlePasswordUnlock = () => {
     align-items: center;
     justify-content: center;
     background-color: #ffffff;
-    padding: 10rpx 0;
+    // padding: 10rpx 0;
+    margin: 15rpx 0;
 
     .tab-icon {
       width: 41rpx;
@@ -418,7 +453,7 @@ const handlePasswordUnlock = () => {
 
     .tab-text {
       font-size: 22rpx;
-      color: #666;
+      color: #333;
       transition: color 0.3s;
     }
 

@@ -8,12 +8,13 @@
 
       <!-- 分享选项 -->
       <view class="share-options">
-        <view class="share-item" @tap="handleShare('wechat')">
+        <!-- 微信分享：使用 button open-type="share" -->
+        <button class="share-item share-button" open-type="share" @tap="handleShare('wechat')">
           <view class="icon-wrapper">
             <image class="share-icon" src="/static/index/weixin.png" mode="aspectFit"></image>
           </view>
           <text class="share-text">微信好友</text>
-        </view>
+        </button>
 
         <view class="share-item" @tap="handleShare('download')">
           <view class="icon-wrapper">
@@ -89,6 +90,19 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   gap: 20rpx;
+}
+
+// 重置按钮样式，使其与 view 样式一致
+.share-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+
+  &::after {
+    border: none;
+  }
 }
 
 .icon-wrapper {

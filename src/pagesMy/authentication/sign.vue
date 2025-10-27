@@ -14,7 +14,7 @@
     >
       <ShCustomForm v-model="formData" :fields="fields" />
     </scroll-view>
-    <ShBottomBtns :buttons="bottomButtons" @click="handleButtonClick" />
+    <ShBottomBtns :paddingBottom="130" :buttons="bottomButtons" @click="handleButtonClick" />
     <BottomTabbar />
   </view>
 </template>
@@ -85,7 +85,7 @@ const handleButtonClick = (index: number) => {
   padding-top: 20rpx;
   background: #fff;
   .content {
-    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 100rpx);
+    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 128rpx);
   }
   .navbar-fixed {
     position: fixed;

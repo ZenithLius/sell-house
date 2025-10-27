@@ -8,7 +8,7 @@
           <image
             class="collapse-icon"
             :class="{ 'collapse-icon-active': activeIndex === index }"
-            src="/static/my/downLogo.png"
+            src="@/pagesMy/static/downLogo.png"
             mode="aspectFit"
           />
         </view>
@@ -130,7 +130,7 @@ const previewImage = (images: string[], currentUrl: string) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32rpx 32rpx;
+  padding: 32rpx 40rpx;
   background: #fff;
   transition: background-color 0.3s;
 
@@ -197,9 +197,6 @@ const previewImage = (images: string[], currentUrl: string) => {
 }
 
 .stage-item {
-  background: #f8f9fa;
-  border-radius: 16rpx;
-  padding: 24rpx;
 }
 
 .stage-header {
@@ -264,9 +261,12 @@ const previewImage = (images: string[], currentUrl: string) => {
 }
 
 .stage-body {
+  background: #f8f9fa;
   display: flex;
   flex-direction: column;
   gap: 12rpx;
+  border-radius: 16rpx;
+  padding: 24rpx;
 }
 
 .stage-title {

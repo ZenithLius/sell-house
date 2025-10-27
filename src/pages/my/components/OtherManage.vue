@@ -3,23 +3,23 @@
     <view class="section-title">其他管理：</view>
     <view class="manage-grid">
       <view class="manage-item" @tap="handleClick('agent')">
-        <image class="manage-icon" src="@/static/my/agent.png"></image>
+        <image class="manage-icon" src="@/pagesMy/static/agent.png"></image>
         <text class="manage-text">经纪人</text>
       </view>
       <view class="manage-item" @tap="handleClick('staff')">
-        <image class="manage-icon" src="@/static/my/staff.png"></image>
+        <image class="manage-icon" src="@/pagesMy/static/staff.png"></image>
         <text class="manage-text">内部员工</text>
       </view>
       <view class="manage-item" @tap="handleClick('manager')">
-        <image class="manage-icon" src="@/static/my/manager.png"></image>
+        <image class="manage-icon" src="@/pagesMy/static/manager.png"></image>
         <text class="manage-text">片区经理</text>
       </view>
       <view class="manage-item" @tap="handleClick('investment')">
-        <image class="manage-icon" src="@/static/my/Investment.png"></image>
+        <image class="manage-icon" src="@/pagesMy/static/Investment.png"></image>
         <text class="manage-text">投资人</text>
       </view>
       <view class="manage-item" @tap="handleClick('renovation')">
-        <image class="manage-icon" src="@/static/my/renovation.png"></image>
+        <image class="manage-icon" src="@/pagesMy/static/renovation.png"></image>
         <text class="manage-text">房屋装修</text>
       </view>
     </view>

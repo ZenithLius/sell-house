@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { ref } from 'vue'
 interface Props {
   //暂时控制，浏览数据，佣金。房价上涨等
@@ -303,7 +302,7 @@ const handleCardClick = (item: HomeItem) => {
 
 <style lang="scss" scoped>
 .home-list {
-  padding: 0 32rpx;
+  padding: 0 16rpx;
 }
 
 .home-card {
@@ -375,14 +374,13 @@ const handleCardClick = (item: HomeItem) => {
   color: #030509;
   line-height: 38rpx;
   text-overflow: ellipsis;
-  margin-bottom: 12rpx;
 }
 
 .home-basic {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  margin-bottom: 12rpx;
+  // margin-bottom: 12rpx;
 }
 
 .basic-item {
@@ -397,7 +395,7 @@ const handleCardClick = (item: HomeItem) => {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 12rpx;
+  // margin-bottom: 12rpx;
   flex-wrap: wrap;
 }
 
@@ -414,7 +412,7 @@ const handleCardClick = (item: HomeItem) => {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 20rpx;
   .down-icon {
     width: 13rpx;
     height: 20rpx;

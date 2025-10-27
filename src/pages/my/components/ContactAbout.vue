@@ -1,11 +1,11 @@
 <template>
   <view class="contact-about">
     <view class="contact-item" @tap="handleClick('contact')">
-      <image class="contact-icon" src="@/static/my/phone.png"></image>
+      <image class="contact-icon" src="@/pagesMy/static/phone.png"></image>
       <text class="contact-text">联系我们</text>
     </view>
     <view class="contact-item" @tap="handleClick('about')">
-      <image class="contact-icon" src="@/static/my/about.png"></image>
+      <image class="contact-icon" src="@/pagesMy/static/about.png"></image>
       <text class="contact-text">关于我们</text>
     </view>
   </view>

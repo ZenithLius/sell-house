@@ -1,28 +1,30 @@
 <template>
-  <view class="audit-progress">
-    <view class="title">审核进度：</view>
+  <view class="container">
+    <view class="audit-progress">
+      <view class="title">审核进度：</view>
 
-    <view v-if="completionAudit" class="audit-item">
-      <view class="audit-info">
-        <view class="audit-label">完工审核：</view>
-        <text class="audit-status">{{ completionAudit.status }}</text>
-        <text class="audit-time">{{ completionAudit.time }}</text>
+      <view v-if="completionAudit" class="audit-item">
+        <view class="audit-info">
+          <view class="audit-label">完工审核：</view>
+          <text class="audit-status">{{ completionAudit.status }}</text>
+          <text class="audit-time">{{ completionAudit.time }}</text>
+        </view>
+        <view class="audit-info">
+          <text class="audit-label">审核人：</text>
+          <text class="audit-status">{{ completionAudit.auditor }}</text>
+        </view>
       </view>
-      <view class="audit-info">
-        <text class="audit-label">审核人：</text>
-        <text class="audit-status">{{ completionAudit.auditor }}</text>
-      </view>
-    </view>
 
-    <view v-if="paymentAudit" class="audit-item">
-      <view class="audit-info">
-        <view class="audit-label">支付审核：</view>
-        <text class="audit-status">{{ paymentAudit.status }}</text>
-        <text class="audit-time">{{ paymentAudit.time }}</text>
-      </view>
-      <view class="audit-info">
-        <text class="audit-label">审核人：</text>
-        <text class="audit-status">{{ paymentAudit.auditor }}</text>
+      <view v-if="paymentAudit" class="audit-item">
+        <view class="audit-info">
+          <view class="audit-label">支付审核：</view>
+          <text class="audit-status">{{ paymentAudit.status }}</text>
+          <text class="audit-time">{{ paymentAudit.time }}</text>
+        </view>
+        <view class="audit-info">
+          <text class="audit-label">审核人：</text>
+          <text class="audit-status">{{ paymentAudit.auditor }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -47,11 +49,15 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <style lang="scss" scoped>
+.container {
+  padding: 25rpx;
+  background: #fff;
+}
 .audit-progress {
-  background: #ffffff;
+  background: #f5f5f5;
   border-radius: 16rpx;
-  padding: 32rpx;
-  margin-top: 32rpx;
+  margin-top: 20rpx;
+  padding: 18rpx;
 
   .title {
     font-family: Source Han Sans CN;
@@ -63,7 +69,7 @@ withDefaults(defineProps<Props>(), {
   }
 
   .audit-item {
-    background: #ffffff;
+    background: #f5f5f5;
     border-radius: 12rpx;
     padding: 24rpx 24rpx 24rpx 0rpx;
 
@@ -80,7 +86,8 @@ withDefaults(defineProps<Props>(), {
       font-size: 24rpx;
       color: #908c94;
       line-height: 42rpx;
-      width: 115rpx;
+      white-space: nowrap;
+      width: 118rpx;
       text-align: end;
     }
 

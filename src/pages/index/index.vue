@@ -5,7 +5,6 @@ import { nextTick, ref } from 'vue'
 import CategoryPanel from './components/CategoryPanel.vue'
 import SellBoard from './components/SellBoard.vue'
 import FilterList from './components/FilterList.vue'
-import HomeList from './components/HomeList.vue'
 import { useGuessList } from '@/composables'
 import ShSearchBar from '@/components/ShSearchBar.vue'
 const { safeAreaInsets } = uni.getSystemInfoSync()
@@ -173,7 +172,7 @@ const back = () => {
         <!-- 筛选功能 -->
         <FilterList @drawer-change="handleDrawerChange" />
         <!-- 房子信息list -->
-        <HomeList />
+        <ShHomeList />
       </template>
     </scroll-view>
   </view>

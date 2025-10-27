@@ -13,7 +13,16 @@ interface FieldConfig {
   head?: string
   key: string
   label: string
-  type?: 'input' | 'textarea' | 'select' | 'date' | 'upload' | 'idCard' | 'selectSearch'
+  type?:
+    | 'input'
+    | 'textarea'
+    | 'select'
+    | 'date'
+    | 'upload'
+    | 'idCard'
+    | 'selectSearch'
+    | 'none'
+    | 'radio'
   placeholder?: string
   inputType?: 'text' | 'number' | 'idcard' | 'digit'
   password?: boolean
@@ -22,6 +31,10 @@ interface FieldConfig {
   options?: OptionItem[]
   maxCount?: number
   visible?: boolean | ((form: Record<string, any>) => boolean)
+  showLabel?: boolean
+  col?: number
+  radioLabel?: string
+  radioKey?: string
 }
 
 const props = withDefaults(
@@ -75,6 +88,54 @@ const fieldVisible = (field: FieldConfig) => {
 
 // 根据 visible 过滤可展示的字段，避免在模板中 v-for 与 v-if 混用
 const renderFields = computed(() => props.fields.filter((f) => fieldVisible(f)))
+
+const renderBlocks = computed(() => {
+  const blocks: Array<
+    { type: 'single'; field: FieldConfig } | { type: 'grid'; cols: number; fields: FieldConfig[] }
+  > = []
+  const list = renderFields.value
+  let current: FieldConfig[] = []
+  let used = 0
+
+  const width24 = (f: FieldConfig) => {
+    const v = Number((f as any).col)
+    if (!isFinite(v) || v <= 0) return 24
+    return Math.max(1, Math.min(24, Math.floor(v)))
+  }
+
+  for (const f of list) {
+    const w = width24(f)
+    if (used + w > 24) {
+      if (current.length) blocks.push({ type: 'grid', cols: current.length, fields: current })
+      current = [f]
+      used = w
+    } else {
+      current.push(f)
+      used += w
+    }
+
+    if (used === 24) {
+      blocks.push({ type: 'grid', cols: current.length, fields: current })
+      current = []
+      used = 0
+    }
+  }
+
+  if (current.length) {
+    blocks.push({ type: 'grid', cols: current.length, fields: current })
+  }
+
+  return blocks
+})
+
+const getGridTemplate = (block: { cols: number; fields: FieldConfig[] }) => {
+  const widths = block.fields.map((f) => {
+    const v = Number((f as any).col)
+    const w = !isFinite(v) || v <= 0 ? 24 : Math.max(1, Math.min(24, Math.floor(v)))
+    return `${(w / 24) * 100}%`
+  })
+  return widths.join(' ')
+}
 
 const onSelectChange = (field: FieldConfig, e: any) => {
   const index = e?.detail?.value ?? 0
@@ -329,189 +390,479 @@ defineExpose({ validate, getData })
 
 <template>
   <view class="form">
-    <view v-for="field in renderFields" :key="field.key" class="form-item">
-      <view class="label">
-        {{ field.label }}
-        <text v-if="props.showAsteriskForRequired && field.required" style="color: red">*</text>
-      </view>
-
-      <template v-if="(field.type || 'input') === 'input'">
-        <view class="name-gender-row">
-          <input
-            v-model="form[field.key]"
-            class="input-style"
-            :type="field.inputType || 'text'"
-            :password="field.password === true"
-            :placeholder="field.placeholder || '请输入'"
-            placeholder-style="color:#999"
-          />
-          <text v-if="field.unit" class="unit">{{ field.unit }}</text>
-        </view>
-      </template>
-
-      <template v-else-if="(field.type || 'code') === 'code'">
-        <view class="name-gender-row">
-          <input
-            v-model="form[field.key]"
-            class="input-style"
-            :type="field.inputType || 'text'"
-            :password="field.password === true"
-            :placeholder="field.placeholder || '请输入'"
-            placeholder-style="color:#999"
-          />
-          <text @click="sendCode" class="unit" :class="{ 'unit-disabled': isCounting }">
-            {{ isCounting ? `已发送（${countdown}s）` : '发送验证码' }}
-          </text>
-        </view>
-      </template>
-
-      <template v-else-if="field.type === 'textarea'">
-        <view class="textarea-wrapper">
-          <textarea
-            v-model="form[field.key]"
-            class="textarea"
-            :placeholder="field.placeholder || '请输入'"
-            placeholder-style="color:#999"
-            auto-height
-            :maxlength="500"
-          />
-          <view class="textarea-counter"> {{ (form[field.key] || '').length }}/500 </view>
-        </view>
-      </template>
-
-      <template v-else-if="field.type === 'select'">
-        <view class="name-gender-row" @click="openSelectPopup(field)">
-          <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
-            {{ field.head }}
-          </text>
-          <text class="input-style" :style="{ color: getSelectedLabel(field) ? '#333' : '#999' }">
-            {{ getSelectedLabel(field) || field.placeholder || '' }}
-          </text>
-          <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
-        </view>
-      </template>
-
-      <template v-else-if="field.type === 'selectSearch'">
-        <view class="name-gender-row" @click="openSearchPopup(field)">
-          <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
-            {{ field.head }}
-          </text>
-          <text
-            class="input-style"
-            :style="{ color: getSearchSelectedLabel(field) ? '#333' : '#999' }"
+    <template v-for="(block, bi) in renderBlocks" :key="bi">
+      <template v-if="block.type === 'single'">
+        <view class="form-item">
+          <view
+            v-if="block.field.label !== 'none' && block.field.showLabel !== false"
+            class="label"
           >
-            {{ getSearchSelectedLabel(field) || field.placeholder || '' }}
-          </text>
-          <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+            {{ block.field.label }}
+            <text v-if="props.showAsteriskForRequired && block.field.required" style="color: red"
+              >*</text
+            >
+          </view>
+
+          <template v-if="(block.field.type || 'input') === 'input'">
+            <view class="name-gender-row">
+              <input
+                v-model="form[block.field.key]"
+                class="input-style"
+                :type="block.field.inputType || 'text'"
+                :password="block.field.password === true"
+                :placeholder="block.field.placeholder || '请输入'"
+                placeholder-style="color:#999"
+              />
+              <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
+            </view>
+          </template>
+
+          <template v-else-if="(block.field.type || 'code') === 'code'">
+            <view class="name-gender-row">
+              <input
+                v-model="form[block.field.key]"
+                class="input-style"
+                :type="block.field.inputType || 'text'"
+                :password="block.field.password === true"
+                :placeholder="block.field.placeholder || '请输入'"
+                placeholder-style="color:#999"
+              />
+              <text @click="sendCode" class="unit" :class="{ 'unit-disabled': isCounting }">
+                {{ isCounting ? `已发送（${countdown}s）` : '发送验证码' }}
+              </text>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'textarea'">
+            <view class="textarea-wrapper">
+              <textarea
+                v-model="form[block.field.key]"
+                class="textarea"
+                :placeholder="block.field.placeholder || '请输入'"
+                placeholder-style="color:#999"
+                auto-height
+                :maxlength="500"
+              />
+              <view class="textarea-counter"> {{ (form[block.field.key] || '').length }}/500 </view>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'select'">
+            <view class="name-gender-row" @click="openSelectPopup(block.field)">
+              <text v-if="block.field.head" class="input-styles" :style="{ color: '#333' }">
+                {{ block.field.head }}
+              </text>
+              <text
+                class="input-style"
+                :style="{ color: getSelectedLabel(block.field) ? '#333' : '#999' }"
+              >
+                {{ getSelectedLabel(block.field) || block.field.placeholder || '' }}
+              </text>
+              <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
+              <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'selectSearch'">
+            <view class="name-gender-row" @click="openSearchPopup(block.field)">
+              <text v-if="block.field.head" class="input-styles" :style="{ color: '#333' }">
+                {{ block.field.head }}
+              </text>
+              <text
+                class="input-style"
+                :style="{ color: getSearchSelectedLabel(block.field) ? '#333' : '#999' }"
+              >
+                {{ getSearchSelectedLabel(block.field) || block.field.placeholder || '' }}
+              </text>
+              <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'date'">
+            <view class="name-gender-row">
+              <uni-datetime-picker
+                v-model="form[block.field.key]"
+                type="date"
+                :clear-icon="false"
+                :placeholder="block.field.placeholder || '请选择日期'"
+                @change="onDateChange(block.field, $event)"
+              >
+                <template #default>
+                  <view class="date-picker-content">
+                    <text v-if="block.field.head" class="input-styles" :style="{ color: '#333' }">
+                      {{ block.field.head }}
+                    </text>
+                    <text
+                      class="input-style"
+                      :style="{ color: form[block.field.key] ? '#333' : '#999' }"
+                    >
+                      {{ form[block.field.key] || '请选择日期' }}
+                    </text>
+                  </view>
+                </template>
+              </uni-datetime-picker>
+              <image class="date-icon" src="@/pagesMy/static/date.png" mode="aspectFit"></image>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'upload'">
+            <view class="upload-container">
+              <view
+                v-for="(img, imgIdx) in form[block.field.key] || []"
+                :key="imgIdx"
+                class="upload-item"
+                @click="previewImage(block.field, imgIdx)"
+              >
+                <image :src="img" mode="aspectFill" class="upload-image"></image>
+                <view class="delete-btn" @click.stop="removeImage(block.field, imgIdx)">
+                  <text class="delete-icon">×</text>
+                </view>
+              </view>
+              <view
+                v-if="
+                  !block.field.maxCount ||
+                  (form[block.field.key] || []).length < block.field.maxCount
+                "
+                class="upload-item upload-btn"
+                @click="chooseImage(block.field)"
+              >
+                <image
+                  src="@/pagesMy/static/upload.png"
+                  mode="aspectFit"
+                  class="upload-icon"
+                ></image>
+              </view>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'radio'">
+            <view class="name-gender-row radio-row">
+              <!-- <input
+                v-model="form[block.field.key]"
+                class="input-style"
+                :type="block.field.inputType || 'text'"
+                :placeholder="block.field.placeholder || '请输入'"
+                placeholder-style="color:#999"
+              /> -->
+              <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
+              <view
+                class="radio-wrapper"
+                @click="
+                  form[block.field.radioKey || block.field.key + '_checked'] =
+                    !form[block.field.radioKey || block.field.key + '_checked']
+                "
+              >
+                <view
+                  class="radio-box"
+                  :class="{ checked: form[block.field.radioKey || block.field.key + '_checked'] }"
+                >
+                  <view
+                    v-if="form[block.field.radioKey || block.field.key + '_checked']"
+                    class="radio-inner"
+                  ></view>
+                </view>
+                <text class="radio-label">{{ block.field.radioLabel || '待定' }}</text>
+              </view>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'idCard'">
+            <view class="idcard-container">
+              <view class="idcard-item">
+                <view class="idcard-image-wrapper" @click="chooseIdCard(block.field, 'front')">
+                  <view class="idcard-image-box">
+                    <image
+                      v-if="form[block.field.key]?.front"
+                      :src="form[block.field.key]?.front"
+                      mode="aspectFill"
+                      class="idcard-image"
+                      @click.stop="previewIdCard(form[block.field.key]?.front)"
+                    ></image>
+                    <image
+                      v-else
+                      :src="'@/pagesMy/static/idcard.png'"
+                      mode="aspectFill"
+                      class="idcard-image"
+                    ></image>
+                    <view
+                      v-if="form[block.field.key]?.front"
+                      class="delete-btn"
+                      @click.stop="removeIdCard(block.field, 'front')"
+                    >
+                      <text class="delete-icon">×</text>
+                    </view>
+                  </view>
+                </view>
+                <text class="idcard-text">上传身份证人像面</text>
+              </view>
+              <view class="idcard-item">
+                <view class="idcard-image-wrapper" @click="chooseIdCard(block.field, 'back')">
+                  <view class="idcard-image-box">
+                    <image
+                      v-if="form[block.field.key]?.back"
+                      :src="form[block.field.key]?.back"
+                      mode="aspectFill"
+                      class="idcard-image"
+                      @click.stop="previewIdCard(form[block.field.key]?.back)"
+                    ></image>
+                    <image
+                      v-else
+                      :src="'@/pagesMy/static/idcard.png'"
+                      mode="aspectFill"
+                      class="idcard-image"
+                    ></image>
+                    <view
+                      v-if="form[block.field.key]?.back"
+                      class="delete-btn"
+                      @click.stop="removeIdCard(block.field, 'back')"
+                    >
+                      <text class="delete-icon">×</text>
+                    </view>
+                  </view>
+                </view>
+                <text class="idcard-text">上传身份证国徽面</text>
+              </view>
+            </view>
+          </template>
         </view>
       </template>
 
-      <template v-else-if="field.type === 'date'">
-        <view class="name-gender-row">
-          <uni-datetime-picker
-            v-model="form[field.key]"
-            type="date"
-            :clear-icon="false"
-            :placeholder="field.placeholder || '请选择日期'"
-            @change="onDateChange(field, $event)"
+      <template v-else>
+        <view class="form-grid" :style="{ gridTemplateColumns: getGridTemplate(block) }">
+          <view
+            v-for="(field, fi) in block.fields"
+            :key="field.key + '-' + fi"
+            class="form-item grid-item"
           >
-            <template #default>
-              <view class="date-picker-content">
-                <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
-                  {{ field.head }}
-                </text>
-                <text class="input-style" :style="{ color: form[field.key] ? '#333' : '#999' }">
-                  {{ form[field.key] || '请选择日期' }}
+            <view v-if="field.label !== 'none' && field.showLabel !== false" class="label">
+              {{ field.label }}
+              <text v-if="props.showAsteriskForRequired && field.required" style="color: red"
+                >*</text
+              >
+            </view>
+
+            <template v-if="(field.type || 'input') === 'input'">
+              <view class="name-gender-row">
+                <input
+                  v-model="form[field.key]"
+                  class="input-style"
+                  :type="field.inputType || 'text'"
+                  :password="field.password === true"
+                  :placeholder="field.placeholder || '请输入'"
+                  placeholder-style="color:#999"
+                />
+                <text v-if="field.unit" class="unit">{{ field.unit }}</text>
+              </view>
+            </template>
+
+            <template v-else-if="(field.type || 'code') === 'code'">
+              <view class="name-gender-row">
+                <input
+                  v-model="form[field.key]"
+                  class="input-style"
+                  :type="field.inputType || 'text'"
+                  :password="field.password === true"
+                  :placeholder="field.placeholder || '请输入'"
+                  placeholder-style="color:#999"
+                />
+                <text @click="sendCode" class="unit" :class="{ 'unit-disabled': isCounting }">
+                  {{ isCounting ? `已发送（${countdown}s）` : '发送验证码' }}
                 </text>
               </view>
             </template>
-          </uni-datetime-picker>
-          <image class="date-icon" src="/static/my/date.png" mode="aspectFit"></image>
-        </view>
-      </template>
 
-      <template v-else-if="field.type === 'upload'">
-        <view class="upload-container">
-          <view
-            v-for="(img, imgIdx) in form[field.key] || []"
-            :key="imgIdx"
-            class="upload-item"
-            @click="previewImage(field, imgIdx)"
-          >
-            <image :src="img" mode="aspectFill" class="upload-image"></image>
-            <view class="delete-btn" @click.stop="removeImage(field, imgIdx)">
-              <text class="delete-icon">×</text>
-            </view>
-          </view>
-          <view
-            v-if="!field.maxCount || (form[field.key] || []).length < field.maxCount"
-            class="upload-item upload-btn"
-            @click="chooseImage(field)"
-          >
-            <image src="/static/my/upload.png" mode="aspectFit" class="upload-icon"></image>
-          </view>
-        </view>
-      </template>
+            <template v-else-if="field.type === 'textarea'">
+              <view class="textarea-wrapper">
+                <textarea
+                  v-model="form[field.key]"
+                  class="textarea"
+                  :placeholder="field.placeholder || '请输入'"
+                  placeholder-style="color:#999"
+                  auto-height
+                  :maxlength="500"
+                />
+                <view class="textarea-counter"> {{ (form[field.key] || '').length }}/500 </view>
+              </view>
+            </template>
 
-      <template v-else-if="field.type === 'idCard'">
-        <view class="idcard-container">
-          <view class="idcard-item">
-            <view class="idcard-image-wrapper" @click="chooseIdCard(field, 'front')">
-              <view class="idcard-image-box">
-                <image
-                  v-if="form[field.key]?.front"
-                  :src="form[field.key]?.front"
-                  mode="aspectFill"
-                  class="idcard-image"
-                  @click.stop="previewIdCard(form[field.key]?.front)"
-                ></image>
-                <image
-                  v-else
-                  :src="'/static/my/idcard.png'"
-                  mode="aspectFill"
-                  class="idcard-image"
-                ></image>
-                <view
-                  v-if="form[field.key]?.front"
-                  class="delete-btn"
-                  @click.stop="removeIdCard(field, 'front')"
+            <template v-else-if="field.type === 'select'">
+              <view class="name-gender-row" @click="openSelectPopup(field)">
+                <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
+                  {{ field.head }}
+                </text>
+                <text
+                  class="input-style"
+                  :style="{ color: getSelectedLabel(field) ? '#333' : '#999' }"
                 >
-                  <text class="delete-icon">×</text>
+                  {{ getSelectedLabel(field) || field.placeholder || '' }}
+                </text>
+                <text v-if="field.unit" class="unit">{{ field.unit }}</text>
+                <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+              </view>
+            </template>
+
+            <template v-else-if="field.type === 'selectSearch'">
+              <view class="name-gender-row" @click="openSearchPopup(field)">
+                <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
+                  {{ field.head }}
+                </text>
+                <text
+                  class="input-style"
+                  :style="{ color: getSearchSelectedLabel(field) ? '#333' : '#999' }"
+                >
+                  {{ getSearchSelectedLabel(field) || field.placeholder || '' }}
+                </text>
+                <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+              </view>
+            </template>
+
+            <template v-else-if="field.type === 'date'">
+              <view class="name-gender-row">
+                <uni-datetime-picker
+                  v-model="form[field.key]"
+                  type="date"
+                  :clear-icon="false"
+                  :placeholder="field.placeholder || '请选择日期'"
+                  @change="onDateChange(field, $event)"
+                >
+                  <template #default>
+                    <view class="date-picker-content">
+                      <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
+                        {{ field.head }}
+                      </text>
+                      <text
+                        class="input-style"
+                        :style="{ color: form[field.key] ? '#333' : '#999' }"
+                      >
+                        {{ form[field.key] || '请选择日期' }}
+                      </text>
+                    </view>
+                  </template>
+                </uni-datetime-picker>
+                <image class="date-icon" src="@/pagesMy/static/date.png" mode="aspectFit"></image>
+              </view>
+            </template>
+
+            <template v-else-if="field.type === 'upload'">
+              <view class="upload-container">
+                <view
+                  v-for="(img, imgIdx) in form[field.key] || []"
+                  :key="imgIdx"
+                  class="upload-item"
+                  @click="previewImage(field, imgIdx)"
+                >
+                  <image :src="img" mode="aspectFill" class="upload-image"></image>
+                  <view class="delete-btn" @click.stop="removeImage(field, imgIdx)">
+                    <text class="delete-icon">×</text>
+                  </view>
+                </view>
+                <view
+                  v-if="!field.maxCount || (form[field.key] || []).length < field.maxCount"
+                  class="upload-item upload-btn"
+                  @click="chooseImage(field)"
+                >
+                  <image
+                    src="@/pagesMy/static/upload.png"
+                    mode="aspectFit"
+                    class="upload-icon"
+                  ></image>
                 </view>
               </view>
-            </view>
-            <text class="idcard-text">上传身份证人像面</text>
-          </view>
-          <view class="idcard-item">
-            <view class="idcard-image-wrapper" @click="chooseIdCard(field, 'back')">
-              <view class="idcard-image-box">
-                <image
-                  v-if="form[field.key]?.back"
-                  :src="form[field.key]?.back"
-                  mode="aspectFill"
-                  class="idcard-image"
-                  @click.stop="previewIdCard(form[field.key]?.back)"
-                ></image>
-                <image
-                  v-else
-                  :src="'/static/my/idcard.png'"
-                  mode="aspectFill"
-                  class="idcard-image"
-                ></image>
+            </template>
+
+            <template v-else-if="field.type === 'radio'">
+              <view class="name-gender-row radio-row">
+                <!-- <input
+                  v-model="form[field.key]"
+                  class="input-style"
+                  :type="field.inputType || 'text'"
+                  :placeholder="field.placeholder || '请输入'"
+                  placeholder-style="color:#999"
+                /> -->
+                <text v-if="field.unit" class="unit">{{ field.unit }}</text>
                 <view
-                  v-if="form[field.key]?.back"
-                  class="delete-btn"
-                  @click.stop="removeIdCard(field, 'back')"
+                  class="radio-wrapper"
+                  @click="
+                    form[field.radioKey || field.key + '_checked'] =
+                      !form[field.radioKey || field.key + '_checked']
+                  "
                 >
-                  <text class="delete-icon">×</text>
+                  <view
+                    class="radio-box"
+                    :class="{ checked: form[field.radioKey || field.key + '_checked'] }"
+                  >
+                    <view
+                      v-if="form[field.radioKey || field.key + '_checked']"
+                      class="radio-inner"
+                    ></view>
+                  </view>
+                  <text class="radio-label">{{ field.radioLabel || '待定' }}</text>
                 </view>
               </view>
-            </view>
-            <text class="idcard-text">上传身份证国徽面</text>
+            </template>
+
+            <template v-else-if="field.type === 'idCard'">
+              <view class="idcard-container">
+                <view class="idcard-item">
+                  <view class="idcard-image-wrapper" @click="chooseIdCard(field, 'front')">
+                    <view class="idcard-image-box">
+                      <image
+                        v-if="form[field.key]?.front"
+                        :src="form[field.key]?.front"
+                        mode="aspectFill"
+                        class="idcard-image"
+                        @click.stop="previewIdCard(form[field.key]?.front)"
+                      ></image>
+                      <image
+                        v-else
+                        :src="'@/pagesMy/static/idcard.png'"
+                        mode="aspectFill"
+                        class="idcard-image"
+                      ></image>
+                      <view
+                        v-if="form[field.key]?.front"
+                        class="delete-btn"
+                        @click.stop="removeIdCard(field, 'front')"
+                      >
+                        <text class="delete-icon">×</text>
+                      </view>
+                    </view>
+                  </view>
+                  <text class="idcard-text">上传身份证人像面</text>
+                </view>
+                <view class="idcard-item">
+                  <view class="idcard-image-wrapper" @click="chooseIdCard(field, 'back')">
+                    <view class="idcard-image-box">
+                      <image
+                        v-if="form[field.key]?.back"
+                        :src="form[field.key]?.back"
+                        mode="aspectFill"
+                        class="idcard-image"
+                        @click.stop="previewIdCard(form[field.key]?.back)"
+                      ></image>
+                      <image
+                        v-else
+                        :src="'@/pagesMy/static/idcard.png'"
+                        mode="aspectFill"
+                        class="idcard-image"
+                      ></image>
+                      <view
+                        v-if="form[field.key]?.back"
+                        class="delete-btn"
+                        @click.stop="removeIdCard(field, 'back')"
+                      >
+                        <text class="delete-icon">×</text>
+                      </view>
+                    </view>
+                  </view>
+                  <text class="idcard-text">上传身份证国徽面</text>
+                </view>
+              </view>
+            </template>
           </view>
         </view>
       </template>
-    </view>
+    </template>
     <!-- uni-popup 选择弹窗 -->
     <uni-popup ref="popupRef" type="bottom" background-color="#fff">
       <view class="popup-container">
@@ -585,6 +936,16 @@ defineExpose({ validate, getData })
   padding: 24rpx 32rpx;
 }
 
+.form-grid {
+  display: grid;
+  // margin-bottom: 32rpx;
+}
+
+.form-grid .form-item {
+  margin-bottom: 0;
+  padding-right: 15rpx;
+}
+
 .form-item {
   margin-bottom: 32rpx;
 
@@ -593,6 +954,7 @@ defineExpose({ validate, getData })
     color: #333;
     margin-bottom: 20rpx;
     font-weight: 500;
+    // margin-top: 20rpx;
   }
 
   .name-gender-row {
@@ -603,6 +965,7 @@ defineExpose({ validate, getData })
     height: 88rpx;
     padding-left: 28rpx;
     padding-right: 28rpx;
+    margin-bottom: 28rpx;
 
     .input-style {
       flex: 1;
@@ -769,14 +1132,53 @@ defineExpose({ validate, getData })
     width: 100%;
     height: 100%;
     border-radius: 12rpx;
-    border: 2rpx dashed #d9d9d9;
-    background-color: #fafafa;
+    // border: 2rpx dashed #d9d9d9;
+    // background-color: #fafafa;
   }
 
   .idcard-text {
     font-size: 26rpx;
     color: #666;
     text-align: center;
+  }
+
+  .radio-row {
+    position: relative;
+    background-color: white;
+  }
+
+  .radio-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    margin-left: 20rpx;
+    flex-shrink: 0;
+  }
+
+  .radio-box {
+    width: 32rpx;
+    height: 32rpx;
+    border: 2rpx solid #d9d9d9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    &.checked {
+      border-color: #863fce;
+    }
+  }
+
+  .radio-inner {
+    width: 18rpx;
+    height: 18rpx;
+    border-radius: 50%;
+    background-color: #863fce;
+  }
+
+  .radio-label {
+    font-size: 28rpx;
+    color: #333;
+    white-space: nowrap;
   }
 }
 

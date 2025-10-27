@@ -1,8 +1,8 @@
 <template>
-  <view class="date-filter-container">
-    <text class="filter-label">筛选</text>
+  <view class="date-filter-container" :class="{ 'back-f5': !showLabel }">
+    <text v-if="showLabel" class="filter-label">筛选</text>
 
-    <view class="date-picker-wrapper">
+    <view class="date-picker-wrapper" :class="{ 'back-white': !showLabel }">
       <uni-datetime-picker
         v-model="startDate"
         type="date"
@@ -18,12 +18,12 @@
           </view>
         </template>
       </uni-datetime-picker>
-      <image class="date-icon" src="@/static/my/date.png"></image>
+      <image class="date-icon" src="@/pagesMy/static/date.png"></image>
     </view>
 
-    <text class="date-separator">-</text>
+    <image class="date-separator" src="@/pagesMy/static/dateLine.png"></image>
 
-    <view class="date-picker-wrapper">
+    <view class="date-picker-wrapper" :class="{ 'back-white': !showLabel }">
       <uni-datetime-picker
         v-model="endDate"
         type="date"
@@ -39,8 +39,10 @@
           </view>
         </template>
       </uni-datetime-picker>
-      <image class="date-icon" src="@/static/my/date.png"></image>
+      <image class="date-icon" src="@/pagesMy/static/date.png"></image>
     </view>
+
+    <text v-if="!showLabel" class="filter-reset">重置</text>
   </view>
 </template>
 
@@ -50,11 +52,13 @@ import { ref } from 'vue'
 interface Props {
   startDate?: string
   endDate?: string
+  showLabel?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   startDate: '',
   endDate: '',
+  showLabel: true,
 })
 
 const emit = defineEmits<{
@@ -88,6 +92,20 @@ const handleEndDateChange = (value: any) => {
   gap: 20rpx;
   padding: 20rpx 32rpx;
   background: #fff;
+}
+.back-white {
+  background: #fff !important;
+}
+
+.back-f5 {
+  background: #f5f5f5 !important;
+}
+.filter-reset {
+  font-family: Source Han Sans CN;
+  font-weight: 400;
+  font-size: 28rpx;
+  color: #863fce;
+  line-height: 42rpx;
 }
 
 .filter-label {
@@ -133,7 +151,7 @@ const handleEndDateChange = (value: any) => {
 }
 
 .date-separator {
-  font-size: 28rpx;
-  color: #999;
+  width: 16rpx;
+  height: 3rpx;
 }
 </style>
