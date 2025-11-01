@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+const handleAudit = (item: DealRecordItem) => {
+  emit('audit', item)
+}
+
 interface DealRecordItem {
   id: string | number
   time: string
@@ -29,9 +33,12 @@ const props = defineProps({
   },
 })
 
+const currentRole = uni.getStorageSync('currentOtherManageType')
+
 const emit = defineEmits<{
   loadMore: []
   itemClick: [item: DealRecordItem]
+  audit: [item: DealRecordItem]
 }>()
 
 const scrollTop = ref(0)
@@ -76,6 +83,7 @@ const isAuditSuccess = (status: string) => {
 <template>
   <scroll-view
     class="deal-record-list"
+    :class="{ 'has-bottom-btn': currentRole === 'manager' }"
     scroll-y
     :scroll-top="scrollTop"
     @scrolltolower="handleScrollToLower"
@@ -152,6 +160,14 @@ const isAuditSuccess = (status: string) => {
               />
             </view>
           </view>
+
+          <!-- 待审核的显示审核按钮 -->
+          <view
+            v-if="item.auditStatus === '待审核' && currentRole === 'manager'"
+            class="action-section"
+          >
+            <view class="action-btn" @tap="handleAudit(item)">成交审核</view>
+          </view>
         </view>
       </view>
 
@@ -179,6 +195,26 @@ const isAuditSuccess = (status: string) => {
   width: 100%;
   height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
   background: #fff;
+}
+.has-bottom-btn {
+  height: calc(100vh - env(safe-area-inset-bottom) - 260rpx);
+}
+.action-btn {
+  width: 236rpx;
+  height: 63rpx;
+  background: #863fce;
+  border-radius: 20rpx;
+  font-family: Source Han Sans CN;
+  font-weight: 400;
+  font-size: 26rpx;
+  color: #ffffff;
+  line-height: 35rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto;
+  margin-top: 30rpx;
 }
 
 .list-container {

@@ -14,12 +14,12 @@ const back = () => {
 
 // 用户信息
 const userInfo = ref({
-  avatar: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+  avatar: '/static/customers/share.png',
   name: '钟名白',
   role: '经理',
   phone: '13212345678',
   company: '公司名称公司名称公司名称公司名称', // 公司名称
-  qrcode: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg', // 二维码图片，可以替换为实际的二维码
+  qrcode: '/static/customers/share.png', // 二维码图片，可以替换为实际的二维码
 })
 
 // 最近访客列表
@@ -130,6 +130,9 @@ const onVisitorClick = (visitor: any) => {
 
     <!-- 名片海报组件 -->
     <CardPoster ref="cardPosterRef" />
+
+    <!-- 自定义 TabBar -->
+    <ShMainTabbar />
   </view>
 </template>
 

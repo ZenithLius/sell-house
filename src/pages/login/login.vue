@@ -88,7 +88,7 @@ const onOpenPrivacyContract = () => {
   <view class="viewport">
     <view class="logo">
       <image
-        src="https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/logo_icon.png"
+        src="https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/images/logo_icon.png"
       ></image>
     </view>
     <view class="login">
@@ -134,7 +134,7 @@ const onOpenPrivacyContract = () => {
             :checked="isAgreePrivacy"
             @tap="isAgreePrivacy = !isAgreePrivacy"
           />
-          <text @tap="isAgreePrivacy = !isAgreePrivacy">登录/注册即视为你同意小兔鲜儿</text>
+          <text @tap="isAgreePrivacy = !isAgreePrivacy">登录/注册即视为你同意小房子</text>
         </label>
         <navigator class="link" hover-class="none">《服务条款》</navigator>
         和

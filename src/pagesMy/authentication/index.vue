@@ -46,7 +46,7 @@
             placeholder="搜索房源名称"
             @search="handleStaffSearch"
           />
-          <DateFilter
+          <ShDateFilter
             :showLabel="false"
             v-model:start-date="staffDateRange.startDate"
             v-model:end-date="staffDateRange.endDate"
@@ -72,23 +72,23 @@
     </view>
 
     <!-- 底部导航栏 -->
-    <BottomTabbar v-if="!isRegister && type !== 'agent'" />
+    <ShBottomTabbar v-if="!isRegister && type !== 'agent'" />
   </view>
 </template>
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref, computed, watch } from 'vue'
 import SearchBox from './components/SearchBox.vue'
 import DateFilter from './components/DateFilter.vue'
 import AgentAuthList from './components/AgentAuthList.vue'
-import FilterSelect, { type FilterConfig } from './components/FilterSelect.vue'
+import FilterSelect from './components/FilterSelect.vue'
 import StaffAuthList, {
   type StaffAuthItem,
   type ActionButton,
 } from './components/StaffAuthList.vue'
 import ShCustomTabs from '@/components/ShCustomTabs.vue'
-import BottomTabbar from './components/BottomTabbar.vue'
 import SubmitSection from './components/SubmitSection.vue'
+import type { FilterConfig } from '@/types/filter'
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const isRegister = ref(false)
 const agreedToTerms = ref(false)
@@ -96,7 +96,6 @@ const agreedToTerms = ref(false)
 const handleBack = () => {
   uni.navigateBack()
 }
-
 const handleViewAgreement = () => {
   console.log('查看注册协议')
   // TODO: 跳转到协议页面
@@ -213,7 +212,7 @@ const handleDateChange = (startDate: string, endDate: string) => {
 const agentList = ref([
   {
     id: 1,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
     title: '封闭小区高档社区 简装 近公园 交通便利',
     layout: '2室2厅',
     area: '89',
@@ -229,7 +228,7 @@ const agentList = ref([
   },
   {
     id: 2,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_2.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_2.jpg',
     title: '豪华装修三居室 视野开阔 配套齐全',
     layout: '3室2厅',
     area: '128',
@@ -245,7 +244,7 @@ const agentList = ref([
   },
   {
     id: 3,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_3.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_3.jpg',
     title: '温馨小户型 地铁口 生活便利',
     layout: '1室1厅',
     area: '65',
@@ -434,7 +433,7 @@ const handleStaffFilterChange = (filterIndex: number, value: string | number) =>
 const staffList = ref<StaffAuthItem[]>([
   {
     id: 1,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
     title: '封闭小区高档社区 简装 近公园 交通便利',
     code: '620038',
     district: '天朗御湖',
@@ -523,7 +522,9 @@ const typeToIdentityMap: Record<string, string> = {
 }
 
 onLoad((options) => {
-  type.value = options?.type || ''
+  console.log('我的房源进来了======================')
+  type.value = uni.getStorageSync('currentOtherManageType')
+
   console.log('type:', type.value)
   if (type.value && typeToIdentityMap[type.value]) {
     formData.value.communityName = typeToIdentityMap[type.value]

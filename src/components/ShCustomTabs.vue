@@ -70,7 +70,6 @@ const handleTabClick = (value: string) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: pointer;
   padding: 16rpx 0;
 }
 
@@ -87,13 +86,6 @@ const handleTabClick = (value: string) => {
   font-size: 28rpx;
   color: #262626;
 }
-
-// .tab-item.active .tab-label {
-//   font-family: Source Han Sans CN;
-//   font-weight: 400;
-//   font-size: 28rpx;
-//   color: #262626;
-// }
 
 .badge-dot {
   position: absolute;

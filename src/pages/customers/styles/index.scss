@@ -1,6 +1,7 @@
 .customers {
   min-height: 100vh;
   background-color: #ffffff;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 
   .card-section {
     padding: 20rpx 30rpx;
@@ -54,7 +55,6 @@
               font-weight: 500;
               font-size: 40rpx;
               color: #16181b;
-
             }
 
             .role {

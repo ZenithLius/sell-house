@@ -23,7 +23,7 @@
     <view class="user-info-card" :style="{ marginTop: safeAreaInsets!.top + 60 + 'px' }">
       <!-- 编辑按钮 -->
       <view class="edit-btn" @tap="handleEdit">
-        <image class="edit-icon" src="@/pagesMy/static/edit.png"></image>
+        <image class="edit-icon" src="/static/my/edit.png"></image>
         <text class="edit-text">编辑</text>
       </view>
 
@@ -70,10 +70,15 @@
 
   <!-- 登录弹窗 -->
   <LoginPopup ref="loginPopup" />
+
+  <!-- 自定义 TabBar -->
+  <ShMainTabbar />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import type { BannerItem } from '@/types/home'
 import MenuList from './components/MenuList.vue'
 import OtherManage from './components/OtherManage.vue'
 import ContactAbout from './components/ContactAbout.vue'
@@ -197,7 +202,7 @@ const formData = ref({
 .viewport {
   height: 100vh;
   background-color: #eff0ed;
-  padding-bottom: 54rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
   .bg-image {
     width: 100%;
     height: 832rpx;

@@ -4,13 +4,13 @@
       <image
         v-if="!isFollowed"
         class="action-icon follow"
-        src="/static/index/follow.png"
+        src="@/pagesIndex/static/follow.png"
         mode="aspectFit"
       ></image>
       <image
         v-else
         class="action-icon follow"
-        src="/static/index/followed.png"
+        src="@/pagesIndex/static/followed.png"
         mode="aspectFit"
       ></image>
       <text class="action-text">关注</text>

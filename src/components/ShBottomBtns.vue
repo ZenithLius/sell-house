@@ -1,6 +1,6 @@
 <template>
   <view
-    class="bottom-btns"
+    :class="['bottom-btns', { 'bottom-btns--fixed': fixed }]"
     :style="{
       paddingBottom: `calc(${paddingBottom}rpx + env(safe-area-inset-bottom))`,
       background: backgroundColor,
@@ -13,6 +13,10 @@
       :style="{
         background: btn.background || '#863fce',
         color: btn.color || '#ffffff',
+        border:
+          btn.background === '#fff' || btn.background === '#ffffff' || btn.background === 'white'
+            ? '2px solid #EAEAEA'
+            : 'none',
       }"
       @tap="handleClick(index)"
     >
@@ -32,11 +36,13 @@ interface Props {
   buttons: ButtonConfig[]
   paddingBottom?: number
   backgroundColor?: string
+  fixed?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   paddingBottom: 130,
   backgroundColor: '#f7f8fc',
+  fixed: true,
 })
 
 const emit = defineEmits<{
@@ -50,14 +56,17 @@ const handleClick = (index: number) => {
 
 <style lang="scss" scoped>
 .bottom-btns {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
   gap: 30rpx;
   padding: 35rpx 60rpx;
-  z-index: 1;
+
+  &--fixed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+  }
 
   .btn {
     flex: 1;

@@ -25,7 +25,7 @@
           :key="'subway-' + index"
           class="traffic-item"
         >
-          <image class="traffic-icon" src="/static/index/underground.png" mode="aspectFit"></image>
+          <!-- <image class="traffic-icon" src="/static/index/underground.png" mode="aspectFit"></image> -->
           <text class="traffic-text">{{ item }}</text>
         </view>
       </view>

@@ -145,7 +145,7 @@ const handleSubmit = () => {
 
 .textarea-style {
   height: 550rpx;
-  width: 100%;
+  width: inherit;
   background: #f7f7f7;
   border-radius: 18rpx;
   padding: 28rpx 28rpx;
@@ -209,6 +209,7 @@ const handleSubmit = () => {
     align-items: center;
     background-color: #f7f7f7;
     border-radius: 12rpx;
+    padding-right: 20rpx;
     height: 88rpx;
   }
 
@@ -221,7 +222,6 @@ const handleSubmit = () => {
   .gender-group {
     display: flex;
     align-items: center;
-    margin-left: 20rpx;
   }
 
   .radio-item {
@@ -237,6 +237,7 @@ const handleSubmit = () => {
       font-size: 28rpx;
       color: #666;
       margin-left: 8rpx;
+      white-space: nowrap;
     }
   }
 

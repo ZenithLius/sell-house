@@ -11,14 +11,14 @@
         <!-- 微信分享：使用 button open-type="share" -->
         <button class="share-item share-button" open-type="share" @tap="handleShare('wechat')">
           <view class="icon-wrapper">
-            <image class="share-icon" src="/static/index/weixin.png" mode="aspectFit"></image>
+            <image class="share-icon" :src="weixinIcon" mode="aspectFit"></image>
           </view>
           <text class="share-text">微信好友</text>
         </button>
 
         <view class="share-item" @tap="handleShare('download')">
           <view class="icon-wrapper">
-            <image class="share-icon" src="/static/index/download.png" mode="aspectFit"></image>
+            <image class="share-icon" :src="downloadIcon" mode="aspectFit"></image>
           </view>
           <text class="share-text">下载海报</text>
         </view>
@@ -29,6 +29,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import weixinIcon from '../../static/weixin.png'
+import downloadIcon from '../../static/download.png'
 
 const emit = defineEmits<{
   share: [type: 'wechat' | 'download']

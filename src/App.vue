@@ -13,9 +13,13 @@ onHide(() => {
 </script>
 
 <style lang="scss">
-// 字体图标
 @import '@/styles/fonts.scss';
 @import '@/styles/base.scss';
+
+page {
+  --safe-area-bottom-padding: calc(env(safe-area-inset-bottom) + 350rpx);
+}
+
 .uni-badge--primary {
   background-color: #863fce !important;
 }

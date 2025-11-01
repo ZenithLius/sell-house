@@ -12,6 +12,9 @@ export type CustomFormField = {
     | 'selectSearch'
     | 'none'
     | 'radio'
+    | 'line'
+    | 'upload-video'
+    | 'radio-group'
   placeholder?: string
   inputType?: 'text' | 'number' | 'idcard' | 'digit'
   password?: boolean
@@ -23,6 +26,8 @@ export type CustomFormField = {
   showLabel?: boolean
   col?: number
   span?: number
-  radioLabel?: string // 用于 radio 类型的标题文字
-  radioKey?: string // 用于存储 radio 选中状态的 key
+  radioLabel?: string
+  radioKey?: string
+  weight?: 'normal' | 'bold'
+  desc?: string
 }

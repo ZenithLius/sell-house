@@ -45,16 +45,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-
-export interface FilterOption {
-  label: string
-  value: string | number
-}
-
-export interface FilterConfig {
-  label: string // 默认显示的标签
-  options: FilterOption[] // 可选项列表
-}
+import type { FilterOption, FilterConfig } from '@/types/filter'
 
 interface Props {
   filters: FilterConfig[]
@@ -76,6 +67,8 @@ const showPopup = ref(false)
 const currentFilterIndex = ref<number | null>(null)
 const currentOptions = ref<FilterOption[]>([])
 const tempSelectedValue = ref<string | number | undefined>(undefined)
+// 为每个tab维护临时选择状态
+const tempSelections = ref<Record<number, string | number | undefined>>({})
 
 // 获取过滤器显示的标签
 const getFilterLabel = (filter: FilterConfig, index: number) => {
@@ -89,6 +82,21 @@ const getFilterLabel = (filter: FilterConfig, index: number) => {
 
 // 点击过滤器
 const handleFilterClick = (index: number) => {
+  // 再次点击当前已展开的项：折叠、清空选中并关闭
+  if (currentFilterIndex.value === index && showPopup.value) {
+    handleReset()
+    // 不关闭弹窗，仅清空当前 tab 的内容与状态
+    currentFilterIndex.value = null
+    currentOptions.value = []
+    tempSelectedValue.value = undefined
+    return
+  }
+
+  // 保存当前tab的临时选择
+  if (currentFilterIndex.value !== null) {
+    tempSelections.value[currentFilterIndex.value] = tempSelectedValue.value
+  }
+
   const filter = props.filters[index]
   if (!filter || !filter.options || filter.options.length === 0) {
     return
@@ -96,12 +104,21 @@ const handleFilterClick = (index: number) => {
 
   currentFilterIndex.value = index
   currentOptions.value = filter.options
-  tempSelectedValue.value = activeFilters.value[index]
+  // 优先从临时选择中恢复，否则从activeFilters恢复
+  tempSelectedValue.value =
+    tempSelections.value[index] !== undefined
+      ? tempSelections.value[index]
+      : activeFilters.value[index]
   showPopup.value = true
 }
 
 // 关闭弹窗
 const handleClosePopup = () => {
+  // 保存当前tab的临时选择
+  if (currentFilterIndex.value !== null) {
+    tempSelections.value[currentFilterIndex.value] = tempSelectedValue.value
+  }
+
   showPopup.value = false
   currentFilterIndex.value = null
   currentOptions.value = []
@@ -118,6 +135,8 @@ const handleReset = () => {
   tempSelectedValue.value = undefined
 
   if (currentFilterIndex.value !== null) {
+    // 清除当前tab的临时选择
+    delete tempSelections.value[currentFilterIndex.value]
     const newFilters = { ...activeFilters.value }
     delete newFilters[currentFilterIndex.value]
     activeFilters.value = newFilters
@@ -127,28 +146,42 @@ const handleReset = () => {
 
 // 确定
 const handleConfirm = () => {
+  // 保存当前tab的临时选择
   if (currentFilterIndex.value !== null) {
-    if (tempSelectedValue.value !== undefined) {
-      activeFilters.value = {
-        ...activeFilters.value,
-        [currentFilterIndex.value]: tempSelectedValue.value,
-      }
-      emit('update:modelValue', activeFilters.value)
-      emit('filterChange', currentFilterIndex.value, tempSelectedValue.value)
-    } else {
-      const newFilters = { ...activeFilters.value }
-      delete newFilters[currentFilterIndex.value]
-      activeFilters.value = newFilters
-      emit('update:modelValue', activeFilters.value)
-    }
+    tempSelections.value[currentFilterIndex.value] = tempSelectedValue.value
   }
+
+  // 合并所有tab的选择到activeFilters
+  const newFilters: Record<number, string | number> = { ...activeFilters.value }
+
+  // 遍历所有临时选择，合并数据并emit filterChange事件
+  Object.keys(tempSelections.value).forEach((key) => {
+    const index = Number(key)
+    const value = tempSelections.value[index]
+
+    if (value !== undefined) {
+      newFilters[index] = value
+      // emit filterChange事件
+      emit('filterChange', index, value)
+    } else {
+      delete newFilters[index]
+    }
+  })
+
+  activeFilters.value = newFilters
+  emit('update:modelValue', activeFilters.value)
+
+  // 清空所有临时选择
+  tempSelections.value = {}
+
   handleClosePopup()
 }
 </script>
 
 <style lang="scss" scoped>
 .options-scroll {
-  height: 406rpx;
+  min-height: 200rpx;
+  max-height: 400rpx;
 }
 .drawer-footer {
   display: flex;
@@ -242,6 +275,7 @@ const handleConfirm = () => {
   font-weight: 400;
   font-size: 26rpx;
   color: #333;
+  transition: color 0.3s ease;
   max-width: 8em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -251,9 +285,20 @@ const handleConfirm = () => {
 .filter-arrow {
   font-size: 20rpx;
   color: #999;
+  transition: all 0.3s ease;
 
   &.rotate {
     transform: rotate(180deg);
+  }
+}
+
+.filter-item.active {
+  .filter-label {
+    color: #863fce;
+  }
+
+  .filter-arrow {
+    color: #863fce;
   }
 }
 
@@ -292,6 +337,7 @@ const handleConfirm = () => {
   margin-left: 47rpx;
   flex: 1;
   overflow-y: auto;
+  height: auto;
 }
 
 .option-item {

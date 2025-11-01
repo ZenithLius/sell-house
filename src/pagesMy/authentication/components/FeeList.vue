@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+const currentRole = uni.getStorageSync('currentOtherManageType')
 
 interface FeeItem {
   id: string | number
@@ -53,6 +54,7 @@ const formatAmount = (amount: number) => {
   <scroll-view
     class="fee-list"
     scroll-y
+    :class="{ 'has-bottom-btn': currentRole === 'manager' }"
     :scroll-top="scrollTop"
     @scrolltolower="handleScrollToLower"
   >
@@ -100,8 +102,11 @@ const formatAmount = (amount: number) => {
 .fee-list {
   flex: 1;
   width: 100%;
-  height: calc(100vh - env(safe-area-inset-bottom) - 200rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
   background: #f7f8fc;
+}
+.has-bottom-btn {
+  height: calc(100vh - env(safe-area-inset-bottom) - 300rpx) !important;
 }
 
 .list-container {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
+const currentRole = uni.getStorageSync('currentOtherManageType')
 interface ProcedureItem {
   id: string | number
   status: string // 状态：完结、放款、过户等
@@ -52,6 +52,7 @@ const handleItemClick = (item: ProcedureItem) => {
 <template>
   <scroll-view
     class="procedure-list"
+    :class="{ 'has-bottom-btn': currentRole === 'manager' }"
     scroll-y
     :scroll-top="scrollTop"
     @scrolltolower="handleScrollToLower"
@@ -109,6 +110,9 @@ const handleItemClick = (item: ProcedureItem) => {
   width: 100%;
   height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
   background: #fff;
+}
+.has-bottom-btn {
+  height: calc(100vh - env(safe-area-inset-bottom) - 260rpx);
 }
 
 .list-container {

@@ -16,7 +16,7 @@
                 <text class="desc-text">打开手机蓝牙</text>
                 <image
                   class="bluetooth-icon"
-                  src="/static/index/bluet.png"
+                  src="@/pagesIndex/static/bluet.png"
                   mode="aspectFit"
                 ></image>
               </view>
@@ -35,7 +35,11 @@
               <text class="step-title">第二步：</text>
               <view class="step-desc">
                 <text class="desc-text">用手触碰门锁数字区，激活门锁</text>
-                <image class="hand-icon" src="/static/index/hand.png" mode="aspectFit"></image>
+                <image
+                  class="hand-icon"
+                  src="@/pagesIndex/static/hand.png"
+                  mode="aspectFit"
+                ></image>
               </view>
             </view>
           </view>

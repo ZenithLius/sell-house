@@ -282,6 +282,9 @@ const handleStudyClick = (item: StudyItem) => {
         @item-click="handleStudyClick"
       />
     </view>
+
+    <!-- 自定义 TabBar -->
+    <ShMainTabbar />
   </view>
 </template>
 
@@ -289,6 +292,7 @@ const handleStudyClick = (item: StudyItem) => {
 .container {
   min-height: 100vh;
   background-color: #fff;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 .content {

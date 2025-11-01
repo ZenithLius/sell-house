@@ -67,6 +67,9 @@ $uni-spacing-col-lg: 12px;
 /* 透明度 */
 $uni-opacity-disabled: 0.3; // 组件禁用态的透明度
 
+/* 底部安全区域 */
+$uni-safe-area-bottom: calc(env(safe-area-inset-bottom) + 300rpx);
+
 /* 文章场景相关 */
 $uni-color-title: #2c405a; // 文章标题颜色
 $uni-font-size-title: 20px;

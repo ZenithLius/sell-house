@@ -88,12 +88,13 @@ const handleItemClick = (item: NoticeItem) => {
 
 <style lang="scss" scoped>
 .notice-list {
-  height: calc(100vh - 300rpx);
+  height: 100vh;
+  padding-bottom: var(--safe-area-bottom-padding);
   width: 100%;
 }
 
 .list-container {
-  padding: 20rpx 0;
+  padding-top: 20rpx;
 }
 
 .notice-item {

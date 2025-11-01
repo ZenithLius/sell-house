@@ -12,9 +12,16 @@
       scroll-y
       :style="{ paddingTop: safeAreaInsets!.top +40+ 'px', paddingBottom:safeAreaInsets!.bottom + 100+'rpx' }"
     >
-      <ShCustomForm v-model="formData" :fields="fields" />
+      <ShCustomForm v-if="currentRole !== 'manager'" v-model="formData" :fields="fields" />
+      <ShFormView v-else :modelValue="formData" :fields="fields" :showAsteriskForRequired="true" />
     </scroll-view>
-    <ShBottomBtns :paddingBottom="130" :buttons="bottomButtons" @click="handleButtonClick" />
+
+    <ShBottomBtns
+      :paddingBottom="130"
+      backgroundColor="#fff"
+      :buttons="bottomButtons"
+      @click="handleButtonClick"
+    />
     <BottomTabbar />
   </view>
 </template>
@@ -23,54 +30,77 @@
 import type { CustomFormField } from '@/types/customFormField'
 import BottomTabbar from './components/BottomTabbar.vue'
 import ShBottomBtns from '@/components/ShBottomBtns.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import ShFormView from '@/components/ShFormView.vue'
+import { onLoad } from '@dcloudio/uni-app'
+
+const currentRole = uni.getStorageSync('currentOtherManageType')
+
 const formData = ref({
-  communityName: '',
-  area: '',
-  price: '',
-  region: '',
-  address: '',
-  customerName: '',
-  phone: '',
+  communityName: '123233333',
+  area: '12323',
+  price: '123123',
+  region: '123123',
+  address: '123123',
+  customerName: '123123',
+  phone: '123123',
+  photos: [
+    'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+    'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+  ],
+  idcard: {
+    front: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+    back: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
+  },
 })
 const fields: CustomFormField[] = [
   {
     key: 'communityName',
     label: '合同签约时间',
+    type: 'input',
     head: '收房时间：',
-    type: 'date',
-    placeholder: '收房时间：',
   },
   {
     key: 'communityName',
-    label: '',
+    label: 'none',
     head: '到期时间：',
-    type: 'date',
-    placeholder: '收房时间：',
+    type: 'input',
   },
-  { key: 'area', label: '合同', type: 'upload' },
+  { key: 'photos', label: '合同', type: 'upload', maxCount: 6 },
 
-  { key: 'ownerCertificate', label: '业主房产证', type: 'upload' },
-  { key: 'idCard', label: '身份证正反面', type: 'idCard' },
+  { key: 'photos', label: '业主房产证', type: 'upload', maxCount: 6 },
+  { key: 'idcard', label: '身份证正反面', type: 'idCard' },
 ]
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const handleBack = () => {
   uni.navigateBack()
 }
 
-const bottomButtons = [
-  {
-    text: '保存/修改',
-    background: '#863fce',
-    color: '#ffffff',
-  },
-  {
-    text: '续约',
-    background: '#863fce',
-    color: '#ffffff',
-  },
-]
-
+const bottomButtons = computed(() => {
+  console.log('currentRolejisaunshuxing1', currentRole)
+  if (currentRole === 'manager') {
+    return [
+      {
+        text: '取消',
+        background: '#fff',
+        color: '#863fce',
+      },
+    ]
+  } else {
+    return [
+      {
+        text: '保存/修改',
+        background: '#863fce',
+        color: '#ffffff',
+      },
+      {
+        text: '续约',
+        background: '#863fce',
+        color: '#ffffff',
+      },
+    ]
+  }
+})
 const handleButtonClick = (index: number) => {
   if (index === 0) {
     console.log('保存/修改')
@@ -78,6 +108,9 @@ const handleButtonClick = (index: number) => {
     console.log('续约')
   }
 }
+onLoad(() => {
+  console.log('currentRolejisaunshuxing2', uni.getStorageSync('currentOtherManageType'))
+})
 </script>
 
 <style lang="scss" scoped>

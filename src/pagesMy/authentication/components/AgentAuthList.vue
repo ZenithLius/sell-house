@@ -145,9 +145,9 @@ const handleItemClick = (item: AgentAuthItem) => {
 
 <style lang="scss" scoped>
 .agent-auth-list {
-  height: calc(100vh - 450rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 400rpx);
   width: 100%;
-  background: #f5f5f5;
+  background: #ffffff;
 }
 .divider {
   width: 100%;

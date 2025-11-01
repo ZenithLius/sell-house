@@ -7,7 +7,12 @@
       :showBack="true"
       class="navbar-fixed"
     />
-    <scroll-view scroll-y class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
+    <scroll-view
+      scroll-y
+      class="content"
+      :class="{ 'has-bottom-btn': currentRole === 'manager' }"
+      :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }"
+    >
       <!-- 房源标题 -->
       <view class="house-title">{{ houseTitle }}</view>
 
@@ -41,7 +46,12 @@
         </view>
       </view>
     </scroll-view>
-    <ShBottomBtns backgroundColor="#fff" :buttons="bottomButtons" @click="handleButtonClick" />
+    <ShBottomBtns
+      v-if="currentRole !== 'manager'"
+      backgroundColor="#fff"
+      :buttons="bottomButtons"
+      @click="handleButtonClick"
+    />
     <BottomTabbar />
   </view>
 </template>
@@ -49,6 +59,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BottomTabbar from './components/BottomTabbar.vue'
+
+const currentRole = uni.getStorageSync('currentOtherManageType')
 
 interface RecordItem {
   time: string
@@ -202,6 +214,9 @@ const previewImage = (images: string[], currentUrl: string) => {
   padding: 0 30rpx;
   background: #fff;
   height: calc(100vh - env(safe-area-inset-bottom) - 240rpx);
+}
+.has-bottom-btn {
+  height: calc(100vh - env(safe-area-inset-bottom) - 120rpx);
 }
 
 .house-title {

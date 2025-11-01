@@ -175,6 +175,8 @@ const back = () => {
         <ShHomeList />
       </template>
     </scroll-view>
+
+    <ShMainTabbar />
   </view>
 </template>
 

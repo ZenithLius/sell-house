@@ -11,7 +11,11 @@
       <!-- list -->
       <FeeList :list="feeList" :loading="loading" :hasMore="hasMore" @loadMore="loadMore" />
     </view>
-    <ShBottomBtns :buttons="bottomButtons" @click="handleButtonClick" />
+    <ShBottomBtns
+      v-if="currentRole !== 'manager'"
+      :buttons="bottomButtons"
+      @click="handleButtonClick"
+    />
     <BottomTabbar />
     <view class="pop" :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }">
       <ShPopup
@@ -40,6 +44,7 @@ interface FeeItem {
 }
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
+const currentRole = uni.getStorageSync('currentOtherManageType')
 import type { CustomFormField } from '@/types/customFormField'
 const formData = ref({
   area: '',

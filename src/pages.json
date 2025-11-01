@@ -1,13 +1,9 @@
 {
   // 组件自动引入规则
   "easycom": {
-    // 是否开启自动扫描
     "autoscan": true,
-    // 以正则方式自定义组件匹配规则
     "custom": {
-      // uni-ui 规则如下配置
       "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
-      // 以 Sh 开头的组件，在 components 文件夹中查找引入（需要重启服务器）
       "^Sh(.*)": "@/components/Sh$1.vue"
     }
   },
@@ -76,52 +72,42 @@
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
-  // 设置 TabBar
+  // 设置 TabBar - 使用自定义 TabBar
   "tabBar": {
+    "custom": true,
     "color": "#333",
     "selectedColor": "#863FCE",
-    "backgroundColor": "",
+    "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [
       {
         "text": "首页",
         "pagePath": "pages/index/index",
         "iconPath": "static/tabs/indexPage.png",
-        "iconSize": 41,
         "selectedIconPath": "static/tabs/indexPageActive.png"
       },
-      // {
-      //   "text": "获客",
-      //   "pagePath": "pages/customers/customers",
-      //   "iconPath": "static/tabs/category_default.png",
-      //   "selectedIconPath": "static/tabs/category_selected.png"
-      // },
       {
         "text": "获客",
         "pagePath": "pages/customers/index",
         "iconPath": "static/tabs/customer.png",
-        "iconSize": 41,
         "selectedIconPath": "static/tabs/customerActive.png"
       },
       {
         "text": "卖房",
         "pagePath": "pages/house/index",
         "iconPath": "static/tabs/sellHouse.png",
-        "iconSize": 41,
         "selectedIconPath": "static/tabs/sellHuseActive.png"
       },
       {
         "text": "资讯",
         "pagePath": "pages/consult/index",
         "iconPath": "static/tabs/news.png",
-        "iconSize": 41,
         "selectedIconPath": "static/tabs/newsActive.png"
       },
       {
         "text": "我的",
         "pagePath": "pages/my/index",
         "iconPath": "static/tabs/my.png",
-        "iconSize": 41,
         "selectedIconPath": "static/tabs/myActive.png"
       }
     ]
@@ -282,7 +268,7 @@
           "path": "authentication/dealRecord",
           "style": {
             "navigationStyle": "custom",
-            "navigationBarTitleText": "成交记录",
+            "navigationBarTitleText": "成交信息",
             "disableScroll": true
           }
         },
@@ -322,8 +308,130 @@
           "path": "siteInspection/index",
           "style": {
             "navigationStyle": "custom",
-            "navigationBarTitleText": "实勘房源",
+            "navigationBarTitleText": "实勘房源"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "calculator/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "计算器"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "checkIn/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "员工打卡"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "checkIn/actionCheckIn",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "员工打卡"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "manage/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "片区经理"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "manage/returnRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "回款记录"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "manage/addReturnRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "新增回款"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "pendingReview/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "待审核"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "performance/index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "售卖房源"
+            // "disableScroll": true
+          }
+        }
+      ]
+    },
+    {
+      "root": "pagesMyInvestor",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "投资人",
             "disableScroll": true
+          }
+        },
+        {
+          "path": "incomeStatement",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "收益明细"
+            // "disableScroll": true
+          }
+        }
+      ]
+    },
+    {
+      "root": "pagesRenovation",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "负责人",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "taskManagement",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "任务管理"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "taskManagementView",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "任务管理-查看"
+            // "disableScroll": true
+          }
+        },
+        {
+          "path": "addRecord",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "添加记录"
+            // "disableScroll": true
           }
         }
       ]
@@ -333,7 +441,7 @@
   "preloadRule": {
     "pages/index/index": {
       "network": "all",
-      "packages": ["pagesMy", "pagesIndex", "pagesCustomer", "pagesConsult"]
+      "packages": ["pagesMy", "pagesConsult", "pagesMyInvestor","pagesIndex"]
     }
   }
 }

@@ -38,7 +38,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   name: '李三',
   phone: '13212345678',
-  avatarUrl: '/static/index/phonecall.png',
+  avatarUrl: '/pagesIndex/static/phonecall.png',
 })
 
 const emit = defineEmits<{

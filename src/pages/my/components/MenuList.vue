@@ -12,7 +12,7 @@
       </view>
       <view class="menu-item-right">
         <view v-if="item.showDot && item.hasMessage" class="red-dot"></view>
-        <image class="arrow-icon" src="@/pagesMy/static/right.png"></image>
+        <image class="arrow-icon" src="/static/my/right.png"></image>
       </view>
     </view>
   </view>
@@ -32,29 +32,29 @@ type MenuItem = {
 const menuItems = ref<MenuItem[]>([
   {
     title: '关注记录',
-    icon: '/pagesMy/static/follow.png',
+    icon: '/static/my/follow.png',
     path: '/pagesMy/followRecord/index',
   },
   {
     title: '浏览记录',
-    icon: '/pagesMy/static/viewHistory.png',
+    icon: '/static/my/viewHistory.png',
     path: '/pagesMy/viewHistory/index',
   },
   {
     title: '反馈记录',
-    icon: '/pagesMy/static/feedback.png',
+    icon: '/static/my/feedback.png',
     path: '/pagesMy/feedback/index',
   },
   {
     title: '消息',
-    icon: '/pagesMy/static/message.png',
+    icon: '/static/my/message.png',
     showDot: true,
     hasMessage: true, //小红
     path: '/pagesMy/message/index',
   },
   {
     title: '我的卖房',
-    icon: '/pagesMy/static/house.png',
+    icon: '/static/my/house.png',
     path: '/pagesMy/myHouse/index',
   },
 ])

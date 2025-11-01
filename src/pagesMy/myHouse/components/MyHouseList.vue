@@ -109,7 +109,7 @@ const handleItemClick = (item: HouseItem) => {
 
 <style lang="scss" scoped>
 .house-list {
-  height: calc(100vh - 300rpx);
+  height: calc(100vh - env(safe-area-inset-bottom));
   width: 100%;
   background: #f5f5f5;
 }

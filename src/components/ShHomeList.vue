@@ -31,7 +31,7 @@ interface HomeItem {
 const homeList = ref<HomeItem[]>([
   {
     id: 1,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
     title: '封闭小区高档社区 简装 近公园 交通便利',
     tags: ['婚房首选', '经典两室', '精装拎包入住'],
     area: '89',
@@ -48,7 +48,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 2,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_2.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_2.jpg',
     title: '豪华装修三居室 视野开阔 配套齐全',
     tags: ['豪华装修', '视野开阔', '配套齐全'],
     area: '128',
@@ -65,7 +65,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 3,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_3.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_3.jpg',
     title: '温馨小户型 地铁口 生活便利',
     tags: ['地铁口', '温馨装修', '生活便利'],
     area: '65',
@@ -82,7 +82,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 4,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_4.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_4.jpg',
     title: '学区房 名校旁 适合家庭居住',
     tags: ['学区房', '名校旁', '家庭首选'],
     area: '105',
@@ -99,7 +99,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 5,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_5.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_5.jpg',
     title: '江景房 采光极佳 南北通透',
     tags: ['江景房', '采光好', '南北通透'],
     area: '142',
@@ -116,7 +116,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 6,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_6.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_6.jpg',
     title: '精品公寓 拎包入住 投资自住两相宜',
     tags: ['精品公寓', '拎包入住', '投资佳选'],
     area: '58',
@@ -133,7 +133,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 7,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_7.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_7.jpg',
     title: '复式楼 空间大 适合大家庭',
     tags: ['复式楼', '空间大', '大家庭'],
     area: '186',
@@ -150,7 +150,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 8,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_8.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_8.jpg',
     title: '商住两用 楼下商铺 楼上住宅',
     tags: ['商住两用', '投资优选', '双重收益'],
     area: '95',
@@ -167,7 +167,7 @@ const homeList = ref<HomeItem[]>([
   },
   {
     id: 9,
-    image: 'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_9.jpg',
+    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_9.jpg',
     title: '新房源 刚需首选 价格实惠',
     tags: ['新房源', '刚需首选', '价格实惠'],
     area: '78',
@@ -185,7 +185,7 @@ const homeList = ref<HomeItem[]>([
   {
     id: 10,
     image:
-      'https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_preview_10.jpg',
+      'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_10.jpg',
     title: '老城区 配套成熟 生活方便',
     tags: ['配套成熟', '生活方便', '老城区'],
     area: '92',

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from 'vue'
-import SearchBox from '@/pagesMy/authentication/components/SearchBox.vue'
-import InvestorList from '@/pagesMy/authentication/components/InvestorList.vue'
+
 const { safeAreaInsets } = uni.getSystemInfoSync()
 interface OptionItem {
   label: string
@@ -19,10 +18,13 @@ interface FieldConfig {
     | 'select'
     | 'date'
     | 'upload'
+    | 'upload-video'
     | 'idCard'
     | 'selectSearch'
     | 'none'
     | 'radio'
+    | 'radio-group'
+    | 'line'
   placeholder?: string
   inputType?: 'text' | 'number' | 'idcard' | 'digit'
   password?: boolean
@@ -35,6 +37,8 @@ interface FieldConfig {
   col?: number
   radioLabel?: string
   radioKey?: string
+  weight?: 'normal' | 'bold'
+  desc?: string
 }
 
 const props = withDefaults(
@@ -155,8 +159,8 @@ const validate = () => {
       if (f.type === 'idCard') {
         // 身份证需要检查 front 和 back 是否都有值
         empty = !v || !v.front || !v.back
-      } else if (f.type === 'upload') {
-        // 图片上传需要检查数组是否为空
+      } else if (f.type === 'upload' || f.type === 'upload-video') {
+        // 图片/视频上传需要检查数组是否为空
         empty = !v || !Array.isArray(v) || v.length === 0
       } else {
         // 其他类型的常规检查
@@ -256,6 +260,57 @@ const removeIdCard = (field: FieldConfig, side: 'front' | 'back') => {
   }
 }
 
+// 视频上传相关
+const chooseVideo = (field: FieldConfig) => {
+  const currentVideos = form.value[field.key] || []
+  const maxCount = field.maxCount || 1
+  const remaining = maxCount - currentVideos.length
+
+  if (remaining <= 0) {
+    uni.showToast({
+      title: `最多上传${maxCount}个视频`,
+      icon: 'none',
+    })
+    return
+  }
+
+  uni.chooseVideo({
+    count: 1,
+    sourceType: ['album', 'camera'],
+    maxDuration: 60,
+    camera: 'back',
+    success: (res: any) => {
+      const video = {
+        url: res.tempFilePath,
+        duration: res.duration,
+      }
+      const newVideos = [...currentVideos, video]
+      form.value[field.key] = newVideos
+      emit('fieldChange', field.key, newVideos)
+    },
+  })
+}
+
+const removeVideo = (field: FieldConfig, index: number) => {
+  const currentVideos = form.value[field.key] || []
+  currentVideos.splice(index, 1)
+  form.value[field.key] = [...currentVideos]
+  emit('fieldChange', field.key, form.value[field.key])
+}
+
+const previewVideo = (video: any) => {
+  // 预览视频
+  uni.previewMedia({
+    sources: [
+      {
+        url: video.url,
+        type: 'video',
+      },
+    ],
+    current: 0,
+  })
+}
+
 // uni-popup 相关
 const popupRef = ref<any>(null)
 const currentField = ref<FieldConfig | null>(null)
@@ -327,8 +382,6 @@ const confirmSearchSelect = () => {
 }
 
 const handleSearchKeyword = (keyword: string) => {
-  console.log('搜索关键词:', keyword)
-  // 这里可以添加搜索过滤逻辑
   if (currentSearchField.value?.options) {
     const filtered = currentSearchField.value.options.filter((opt) =>
       opt.label.toLowerCase().includes(keyword.toLowerCase()),
@@ -342,8 +395,8 @@ const handleSearchKeyword = (keyword: string) => {
 }
 
 const handleLoadMoreSearch = () => {
-  // 如果需要分页加载,可以在这里实现
-  console.log('加载更多')
+  // 分页加载
+  console.log('加载更多=====')
 }
 
 const handleSelectSearchItem = (id: string | number) => {
@@ -396,12 +449,20 @@ defineExpose({ validate, getData })
           <view
             v-if="block.field.label !== 'none' && block.field.showLabel !== false"
             class="label"
+            :class="{ 'weight-bold': block.field.weight === 'bold' }"
           >
             {{ block.field.label }}
             <text v-if="props.showAsteriskForRequired && block.field.required" style="color: red"
               >*</text
             >
           </view>
+
+          <view v-if="block.field.desc" class="desc">
+            <image src="@/pagesMy/static/alert.png" mode="aspectFill" class="desc-image"></image>
+            <text>{{ block.field.desc.replace(/\/n/g, '\n') }}</text>
+          </view>
+
+          <view v-if="block.field.type === 'line'" class="line"></view>
 
           <template v-if="(block.field.type || 'input') === 'input'">
             <view class="name-gender-row">
@@ -412,6 +473,7 @@ defineExpose({ validate, getData })
                 :password="block.field.password === true"
                 :placeholder="block.field.placeholder || '请输入'"
                 placeholder-style="color:#999"
+                :cursor-spacing="20"
               />
               <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
             </view>
@@ -426,6 +488,7 @@ defineExpose({ validate, getData })
                 :password="block.field.password === true"
                 :placeholder="block.field.placeholder || '请输入'"
                 placeholder-style="color:#999"
+                :cursor-spacing="20"
               />
               <text @click="sendCode" class="unit" :class="{ 'unit-disabled': isCounting }">
                 {{ isCounting ? `已发送（${countdown}s）` : '发送验证码' }}
@@ -442,6 +505,7 @@ defineExpose({ validate, getData })
                 placeholder-style="color:#999"
                 auto-height
                 :maxlength="500"
+                :cursor-spacing="20"
               />
               <view class="textarea-counter"> {{ (form[block.field.key] || '').length }}/500 </view>
             </view>
@@ -535,6 +599,49 @@ defineExpose({ validate, getData })
             </view>
           </template>
 
+          <template v-else-if="block.field.type === 'upload-video'">
+            <view class="upload-video-wrapper">
+              <view
+                v-for="(video, videoIdx) in form[block.field.key] || []"
+                :key="videoIdx"
+                class="video-preview"
+                @click="previewVideo(video)"
+              >
+                <video
+                  :src="video.url"
+                  class="video-poster"
+                  :show-center-play-btn="false"
+                  :enable-play-gesture="false"
+                  :controls="false"
+                ></video>
+                <view class="play-icon-overlay">
+                  <view class="play-icon-box">
+                    <view class="play-icon"></view>
+                  </view>
+                </view>
+                <view class="delete-btn" @click.stop="removeVideo(block.field, videoIdx)">
+                  <text class="delete-icon">×</text>
+                </view>
+              </view>
+              <view class="upload-video-container">
+                <view
+                  v-if="
+                    !block.field.maxCount ||
+                    (form[block.field.key] || []).length < block.field.maxCount
+                  "
+                  class="upload-item upload-btn"
+                  @click="chooseVideo(block.field)"
+                >
+                  <image
+                    src="@/pagesMy/static/upload.png"
+                    mode="aspectFit"
+                    class="upload-icon"
+                  ></image>
+                </view>
+              </view>
+            </view>
+          </template>
+
           <template v-else-if="block.field.type === 'radio'">
             <view class="name-gender-row radio-row">
               <!-- <input
@@ -566,6 +673,32 @@ defineExpose({ validate, getData })
             </view>
           </template>
 
+          <template v-else-if="block.field.type === 'radio-group'">
+            <view class="radio-group-container">
+              <view
+                v-for="(option, index) in block.field.options || []"
+                :key="index"
+                class="radio-group-item"
+                :class="{ active: form[block.field.key] === option.value }"
+                @click="
+                  ;(form[block.field.key] = option.value),
+                    emit('fieldChange', block.field.key, option.value)
+                "
+              >
+                <view
+                  class="radio-group-circle"
+                  :class="{ checked: form[block.field.key] === option.value }"
+                >
+                  <view
+                    v-if="form[block.field.key] === option.value"
+                    class="radio-group-inner"
+                  ></view>
+                </view>
+                <text class="radio-group-label">{{ option.label }}</text>
+              </view>
+            </view>
+          </template>
+
           <template v-else-if="block.field.type === 'idCard'">
             <view class="idcard-container">
               <view class="idcard-item">
@@ -580,7 +713,7 @@ defineExpose({ validate, getData })
                     ></image>
                     <image
                       v-else
-                      :src="'@/pagesMy/static/idcard.png'"
+                      src="@/pagesMy/static/idcard.png"
                       mode="aspectFill"
                       class="idcard-image"
                     ></image>
@@ -607,7 +740,7 @@ defineExpose({ validate, getData })
                     ></image>
                     <image
                       v-else
-                      :src="'@/pagesMy/static/idcard.png'"
+                      src="@/pagesMy/static/cardback.png"
                       mode="aspectFill"
                       class="idcard-image"
                     ></image>
@@ -634,12 +767,23 @@ defineExpose({ validate, getData })
             :key="field.key + '-' + fi"
             class="form-item grid-item"
           >
-            <view v-if="field.label !== 'none' && field.showLabel !== false" class="label">
+            <view
+              :class="{ 'weight-bold': field.weight === 'bold' }"
+              v-if="field.label !== 'none' && field.showLabel !== false"
+              class="label"
+            >
               {{ field.label }}
               <text v-if="props.showAsteriskForRequired && field.required" style="color: red"
                 >*</text
               >
             </view>
+
+            <view v-if="field.desc" class="desc">
+              <image src="@/pagesMy/static/alert.png" mode="aspectFill" class="desc-image"></image>
+              <text>{{ field.desc.replace(/\/n/g, '\n') }}</text>
+            </view>
+
+            <view v-if="field.type === 'line'" class="line"></view>
 
             <template v-if="(field.type || 'input') === 'input'">
               <view class="name-gender-row">
@@ -650,6 +794,7 @@ defineExpose({ validate, getData })
                   :password="field.password === true"
                   :placeholder="field.placeholder || '请输入'"
                   placeholder-style="color:#999"
+                  :cursor-spacing="20"
                 />
                 <text v-if="field.unit" class="unit">{{ field.unit }}</text>
               </view>
@@ -664,6 +809,7 @@ defineExpose({ validate, getData })
                   :password="field.password === true"
                   :placeholder="field.placeholder || '请输入'"
                   placeholder-style="color:#999"
+                  :cursor-spacing="20"
                 />
                 <text @click="sendCode" class="unit" :class="{ 'unit-disabled': isCounting }">
                   {{ isCounting ? `已发送（${countdown}s）` : '发送验证码' }}
@@ -680,6 +826,7 @@ defineExpose({ validate, getData })
                   placeholder-style="color:#999"
                   auto-height
                   :maxlength="500"
+                  :cursor-spacing="20"
                 />
                 <view class="textarea-counter"> {{ (form[field.key] || '').length }}/500 </view>
               </view>
@@ -770,6 +917,46 @@ defineExpose({ validate, getData })
               </view>
             </template>
 
+            <template v-else-if="field.type === 'upload-video'">
+              <view class="upload-video-wrapper">
+                <view
+                  v-for="(video, videoIdx) in form[field.key] || []"
+                  :key="videoIdx"
+                  class="video-preview"
+                  @click="previewVideo(video)"
+                >
+                  <video
+                    :src="video.url"
+                    class="video-poster"
+                    :show-center-play-btn="false"
+                    :enable-play-gesture="false"
+                    :controls="false"
+                  ></video>
+                  <view class="play-icon-overlay">
+                    <view class="play-icon-box">
+                      <view class="play-icon"></view>
+                    </view>
+                  </view>
+                  <view class="delete-btn" @click.stop="removeVideo(field, videoIdx)">
+                    <text class="delete-icon">×</text>
+                  </view>
+                </view>
+                <view class="upload-video-container">
+                  <view
+                    v-if="!field.maxCount || (form[field.key] || []).length < field.maxCount"
+                    class="upload-item upload-btn"
+                    @click="chooseVideo(field)"
+                  >
+                    <image
+                      src="@/pagesMy/static/upload.png"
+                      mode="aspectFit"
+                      class="upload-icon"
+                    ></image>
+                  </view>
+                </view>
+              </view>
+            </template>
+
             <template v-else-if="field.type === 'radio'">
               <view class="name-gender-row radio-row">
                 <!-- <input
@@ -801,6 +988,28 @@ defineExpose({ validate, getData })
               </view>
             </template>
 
+            <template v-else-if="field.type === 'radio-group'">
+              <view class="radio-group-container">
+                <view
+                  v-for="(option, index) in field.options || []"
+                  :key="index"
+                  class="radio-group-item"
+                  :class="{ active: form[field.key] === option.value }"
+                  @click="
+                    ;(form[field.key] = option.value), emit('fieldChange', field.key, option.value)
+                  "
+                >
+                  <view
+                    class="radio-group-circle"
+                    :class="{ checked: form[field.key] === option.value }"
+                  >
+                    <view v-if="form[field.key] === option.value" class="radio-group-inner"></view>
+                  </view>
+                  <text class="radio-group-label">{{ option.label }}</text>
+                </view>
+              </view>
+            </template>
+
             <template v-else-if="field.type === 'idCard'">
               <view class="idcard-container">
                 <view class="idcard-item">
@@ -815,7 +1024,7 @@ defineExpose({ validate, getData })
                       ></image>
                       <image
                         v-else
-                        :src="'@/pagesMy/static/idcard.png'"
+                        src="@/pagesMy/static/idcard.png"
                         mode="aspectFill"
                         class="idcard-image"
                       ></image>
@@ -842,7 +1051,7 @@ defineExpose({ validate, getData })
                       ></image>
                       <image
                         v-else
-                        :src="'@/pagesMy/static/idcard.png'"
+                        src="@/pagesMy/static/cardback.png"
                         mode="aspectFill"
                         class="idcard-image"
                       ></image>
@@ -864,12 +1073,10 @@ defineExpose({ validate, getData })
       </template>
     </template>
     <!-- uni-popup 选择弹窗 -->
-    <uni-popup ref="popupRef" type="bottom" background-color="#fff">
+    <uni-popup ref="popupRef" safe-area type="bottom" background-color="#fff">
       <view class="popup-container">
         <view class="popup-header">
-          <text class="popup-title">{{
-            currentField?.placeholder || '请选择' + currentField?.label
-          }}</text>
+          <text class="popup-title">{{ currentField?.placeholder || '请选择' }}</text>
         </view>
         <scroll-view scroll-y class="popup-content">
           <view class="options-grid">
@@ -897,19 +1104,19 @@ defineExpose({ validate, getData })
 
     <!-- uni-popup 搜索选择弹窗 -->
     <uni-popup ref="searchPopupRef" type="bottom" background-color="#fff">
-      <view class="search-popup-container" :style="{ paddingTop: safeAreaInsets!.top +10 + 'px' }">
+      <view class="search-popup-container" :style="{ paddingTop: safeAreaInsets!.top + 10 + 'px' }">
         <!-- <view class="search-popup-header">
           <text class="search-popup-title">{{
             currentSearchField?.placeholder || '请选择' + currentSearchField?.label
           }}</text>
         </view> -->
         <view class="search-popup-content">
-          <SearchBox
+          <ShSearchBox
             v-model="searchKeyword"
             :placeholder="currentSearchField?.placeholder || '搜索'"
             @search="handleSearchKeyword"
           />
-          <InvestorList
+          <ShInvestorList
             :list="searchList"
             :loading="searchLoading"
             :hasMore="searchHasMore"
@@ -932,396 +1139,5 @@ defineExpose({ validate, getData })
 </template>
 
 <style lang="scss" scoped>
-.form {
-  padding: 24rpx 32rpx;
-}
-
-.form-grid {
-  display: grid;
-  // margin-bottom: 32rpx;
-}
-
-.form-grid .form-item {
-  margin-bottom: 0;
-  padding-right: 15rpx;
-}
-
-.form-item {
-  margin-bottom: 32rpx;
-
-  .label {
-    font-size: 28rpx;
-    color: #333;
-    margin-bottom: 20rpx;
-    font-weight: 500;
-    // margin-top: 20rpx;
-  }
-
-  .name-gender-row {
-    display: flex;
-    align-items: center;
-    background-color: #f7f7f7;
-    border-radius: 12rpx;
-    height: 88rpx;
-    padding-left: 28rpx;
-    padding-right: 28rpx;
-    margin-bottom: 28rpx;
-
-    .input-style {
-      flex: 1;
-      height: 100%;
-      background: transparent;
-      border: none;
-      font-size: 28rpx;
-      color: #333;
-      display: flex;
-      align-items: center;
-    }
-  }
-
-  .unit {
-    font-family: Source Han Sans CN;
-    font-weight: 400;
-    font-size: 28rpx;
-    color: #863fce;
-    margin-left: 16rpx;
-    flex-shrink: 0;
-    transition: all 0.3s;
-
-    &.unit-disabled {
-      color: rgba(134, 63, 206, 0.4);
-      cursor: not-allowed;
-    }
-  }
-
-  .arrow-icon {
-    width: 10rpx;
-    height: 19rpx;
-    margin-left: 16rpx;
-    flex-shrink: 0;
-  }
-
-  .date-icon {
-    width: 32rpx;
-    height: 32rpx;
-    margin-left: 16rpx;
-    flex-shrink: 0;
-  }
-
-  .date-picker-content {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-
-  .textarea-wrapper {
-    position: relative;
-    width: 100%;
-    background-color: #f7f7f7;
-    border-radius: 12rpx;
-  }
-
-  .textarea {
-    width: 100%;
-    background-color: transparent;
-    padding: 24rpx;
-    padding-bottom: 60rpx;
-    font-size: 28rpx;
-    color: #333;
-    min-height: 200rpx;
-    max-height: 300rpx;
-    box-sizing: border-box;
-  }
-
-  .textarea-counter {
-    position: absolute;
-    right: 24rpx;
-    bottom: 24rpx;
-    font-size: 24rpx;
-    color: #999;
-  }
-
-  .upload-container {
-    padding: 34rpx;
-    display: flex;
-    flex-wrap: wrap;
-    background-color: #f7f7f7;
-    border-radius: 18rpx;
-    gap: 24rpx;
-  }
-
-  .upload-item {
-    width: 30%;
-    height: 168rpx;
-    border-radius: 12rpx;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .upload-image {
-    width: 100%;
-    height: 100%;
-  }
-
-  .delete-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 40rpx;
-    height: 40rpx;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 12rpx 0 12rpx;
-  }
-
-  .delete-icon {
-    color: #fff;
-    font-size: 32rpx;
-    line-height: 32rpx;
-    font-weight: bold;
-  }
-
-  .upload-btn {
-    // background: #863fce;
-    width: 30%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .upload-icon {
-    width: 100%;
-    height: 230rpx;
-  }
-
-  .idcard-container {
-    display: flex;
-    gap: 24rpx;
-    justify-content: space-between;
-    background-color: #f7f7f7;
-    border-radius: 18rpx;
-    padding: 34rpx;
-  }
-
-  .idcard-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20rpx;
-  }
-
-  .idcard-image-wrapper {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .idcard-image-box {
-    position: relative;
-    width: 230rpx;
-    height: 142rpx;
-  }
-
-  .idcard-image {
-    width: 100%;
-    height: 100%;
-    border-radius: 12rpx;
-    // border: 2rpx dashed #d9d9d9;
-    // background-color: #fafafa;
-  }
-
-  .idcard-text {
-    font-size: 26rpx;
-    color: #666;
-    text-align: center;
-  }
-
-  .radio-row {
-    position: relative;
-    background-color: white;
-  }
-
-  .radio-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    margin-left: 20rpx;
-    flex-shrink: 0;
-  }
-
-  .radio-box {
-    width: 32rpx;
-    height: 32rpx;
-    border: 2rpx solid #d9d9d9;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    &.checked {
-      border-color: #863fce;
-    }
-  }
-
-  .radio-inner {
-    width: 18rpx;
-    height: 18rpx;
-    border-radius: 50%;
-    background-color: #863fce;
-  }
-
-  .radio-label {
-    font-size: 28rpx;
-    color: #333;
-    white-space: nowrap;
-  }
-}
-
-.popup-container {
-  background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
-  // padding-bottom: env(safe-area-inset-bottom);
-}
-
-.popup-header {
-  padding: 40rpx 32rpx 32rpx;
-  text-align: center;
-  border-bottom: 1rpx solid #f0f0f0;
-
-  .popup-title {
-    font-size: 32rpx;
-    font-weight: 500;
-    color: #333;
-  }
-}
-
-.popup-content {
-  max-height: 800rpx;
-  padding: 32rpx;
-}
-
-.options-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24rpx;
-}
-
-.option-item {
-  background: #f7f7f7;
-  border-radius: 12rpx;
-  height: 62rpx;
-  padding: 20rpx 28rpx;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-family: Source Han Sans CN;
-  font-weight: 400;
-  font-size: 26rpx;
-  color: #202020;
-
-  &.active {
-    background: #f0e1ff;
-    color: #6c27b3;
-
-    .option-text {
-      color: #6c27b3;
-    }
-  }
-
-  .option-text {
-    font-size: 28rpx;
-    color: #333;
-    white-space: nowrap;
-  }
-}
-
-.popup-footer {
-  display: flex;
-  padding: 32rpx 32rpx 0rpx 32rpx;
-  gap: 24rpx;
-  border-top: 1rpx solid #f0f0f0;
-}
-
-.search-popup-container {
-  background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  padding-top: env(safe-area-inset-top);
-}
-
-.search-popup-header {
-  padding: 40rpx 32rpx 32rpx;
-  text-align: center;
-  border-bottom: 1rpx solid #f0f0f0;
-  flex-shrink: 0;
-
-  .search-popup-title {
-    font-size: 32rpx;
-    font-weight: 500;
-    color: #333;
-  }
-}
-
-.search-popup-content {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.search-popup-footer {
-  display: flex;
-  padding: 32rpx 32rpx 0rpx 32rpx;
-  gap: 24rpx;
-  border-top: 1rpx solid #f0f0f0;
-  flex-shrink: 0;
-}
-
-.footer-btn {
-  flex: 1;
-  height: 76rpx;
-  border-radius: 10rpx;
-  width: 248rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.cancel {
-    background: #ffffff;
-    border: 2px solid #eaeaea;
-
-    .btn-text {
-      font-family: Source Han Sans CN;
-      font-weight: 400;
-      font-size: 28rpx;
-      color: #202020;
-    }
-  }
-
-  &.confirm {
-    background: #863fce;
-    border-radius: 10rpx;
-
-    .btn-text {
-      font-family: Source Han Sans CN;
-      font-weight: 400;
-      font-size: 28rpx;
-      color: #ffffff;
-    }
-  }
-
-  .btn-text {
-    font-size: 32rpx;
-    font-weight: 500;
-  }
-}
+@import './styles/ShCustomForm.scss';
 </style>

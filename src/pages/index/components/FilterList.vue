@@ -322,7 +322,12 @@ const handleMaskClick = () => {
     <!-- 抽屉 -->
 
     <!--  :style="{ paddingTop: safeAreaInsets!.top + 10 + 'px' }"  -->
-    <view class="drawer" :class="{ show: drawerVisible }" @touchmove.stop.prevent>
+    <view
+      v-if="drawerVisible"
+      class="drawer"
+      :class="{ show: drawerVisible }"
+      @touchmove.stop.prevent
+    >
       <CustomNavbar />
       <!-- 1. 顶部标题栏 -->
       <view class="drawer-header">
@@ -474,7 +479,6 @@ const handleMaskClick = () => {
   align-items: center;
   gap: 8rpx;
   padding: 8rpx 0;
-  cursor: pointer;
   transition: all 0.3s ease;
 
   &.active {
@@ -552,7 +556,6 @@ const handleMaskClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
 }
 
 .back-icon {
@@ -589,7 +592,6 @@ const handleMaskClick = () => {
   align-items: center;
   gap: 8rpx;
   padding: 8rpx 16rpx;
-  cursor: pointer;
   transition: all 0.3s ease;
 
   &.active {
@@ -649,7 +651,6 @@ const handleMaskClick = () => {
   font-weight: 400;
   font-size: 26rpx;
   text-align: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   border: 2rpx solid transparent;
   display: inline-flex;
@@ -690,7 +691,6 @@ const handleMaskClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   border: none;
 

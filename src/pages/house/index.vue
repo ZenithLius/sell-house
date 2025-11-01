@@ -24,13 +24,16 @@
     </view>
     <view class="scroll-view">
       <view class="scroll-content">
-        <ShCustomForm v-model="formData" :fields="fields" :has-bottom-tabbar="false" />
+        <ShCustomForm v-model="formData" :fields="fields" :has-bottom-tabbar="true" />
         <view class="footer" @click="handleSubmit">
           <view class="submit-btn">提交</view>
         </view>
         <view class="space" style="height: 50rpx"></view>
       </view>
     </view>
+
+    <!-- 自定义 TabBar -->
+    <ShMainTabbar />
   </scroll-view>
 </template>
 
@@ -129,6 +132,7 @@ const formData = ref({
 .viewport {
   height: 100vh;
   background-color: #fff;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
   .bg-image {
     width: 100%;
     height: 444rpx;

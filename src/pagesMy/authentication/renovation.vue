@@ -8,13 +8,32 @@
       class="navbar-fixed"
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
-      <ShCustomForm v-model="formData" :fields="fields" />
+      <view v-if="currentRole === 'renovation'" class="btn"
+        ><view @tap="handleAddRecord" class="head-btn">+ 添加记录</view></view
+      >
+      <ShCustomForm
+        v-if="currentRole !== 'manager' && currentRole !== 'renovation'"
+        v-model="formData"
+        :fields="fields"
+      />
+
+      <ShFormView v-else :modelValue="formData" :fields="fields2" :showAsteriskForRequired="true" />
+
       <CollapsePanel :items="collapseItems" class="collapse-section" />
       <!-- 底部 -->
       <AuditProgress :completionAudit="completionAuditData" :paymentAudit="paymentAuditData" />
+      <ShBottomBtns
+        v-if="currentRole === 'manager'"
+        backgroundColor="#fff"
+        :buttons="bottomButtons"
+        @click="handleButtonClick"
+        paddingBottom="40"
+        :fixed="false"
+      />
       <view class="space"></view>
     </view>
-    <BottomTabbar />
+
+    <BottomTabbar v-if="currentRole !== 'renovation'" />
   </view>
 </template>
 
@@ -23,17 +42,40 @@ import ShCustomForm from '@/components/ShCustomForm.vue'
 import type { CustomFormField } from '@/types/customFormField'
 import BottomTabbar from './components/BottomTabbar.vue'
 import CollapsePanel from './components/CollapsePanel.vue'
-import type { CollapseItem, StageItem } from './components/CollapsePanel.vue'
+import type { CollapseItem } from './components/CollapsePanel.vue'
 import AuditProgress from './components/AuditProgress.vue'
 import type { AuditInfo } from './components/AuditProgress.vue'
 import { ref } from 'vue'
+
+const handleAddRecord = () => {
+  uni.navigateTo({
+    url: '/pagesRenovation/addRecord',
+  })
+}
+
+const bottomButtons = [
+  {
+    text: '审核',
+    background: '#863fce',
+    color: '#ffffff',
+  },
+]
+const handleButtonClick = (index: number) => {
+  if (index === 0) {
+    console.log('保存/修改')
+  } else if (index === 1) {
+    console.log('续约')
+  }
+}
+
+const currentRole = uni.getStorageSync('currentOtherManageType')
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const handleBack = () => {
   uni.navigateBack()
 }
 const formData = ref({
-  communityName: '',
+  communityName: 'liming',
 })
 
 const fields: CustomFormField[] = [
@@ -50,6 +92,14 @@ const fields: CustomFormField[] = [
       { label: '负责人4', value: '4', phone: '12345678904' },
     ],
     required: false,
+  },
+]
+const fields2: CustomFormField[] = [
+  {
+    key: 'communityName',
+    label: 'none',
+    type: 'input',
+    head: '装修负责人：',
   },
 ]
 
@@ -134,6 +184,24 @@ const collapseItems = ref<CollapseItem[]>([
     right: 0;
     z-index: 100;
     animation: slideDown 0.3s ease-out;
+  }
+  .btn {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 30rpx;
+  }
+  .head-btn {
+    width: 146rpx;
+    height: 46rpx;
+    background: #863fce;
+    border-radius: 23rpx;
+    font-family: Source Han Sans CN;
+    font-weight: 400;
+    font-size: 22rpx;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

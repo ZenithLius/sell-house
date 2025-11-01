@@ -19,6 +19,7 @@
 
     <BottomTabbar />
     <ShBottomBtns
+      v-if="currentRole !== 'manager'"
       :buttons="bottomButtons"
       @click="handleButtonClick"
       :backgroundColor="'#ffffff'"
@@ -30,6 +31,8 @@
 import { ref } from 'vue'
 import ProcedureList from './components/ProcedureList.vue'
 import BottomTabbar from './components/BottomTabbar.vue'
+
+const currentRole = uni.getStorageSync('currentOtherManageType')
 
 interface ProcedureItem {
   id: string | number

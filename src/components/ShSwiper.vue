@@ -3,11 +3,9 @@ import type { BannerItem } from '@/types/home'
 import { ref } from 'vue'
 const activeIndex = ref(0)
 
-// 当 swiper 下标发生变化时触发
 const onChange: UniHelper.SwiperOnChange = (ev) => {
   activeIndex.value = ev.detail.current
 }
-// 定义 props 接收
 defineProps<{
   list: BannerItem[]
 }>()

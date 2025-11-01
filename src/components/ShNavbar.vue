@@ -10,6 +10,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  home: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const back = () => {
@@ -21,7 +25,13 @@ const back = () => {
   <view class="navbar" :style="{ height: safeAreaInsets!.top + 10 + 'px'}"> </view>
   <view class="drawer-header">
     <view v-if="showBack" class="header-back" @tap="back">
-      <image class="back-icon" src="/static/tabs/back.png" mode="aspectFit"></image>
+      <image
+        v-if="home"
+        class="back-icon"
+        src="/static/tabs/sellHouse.png"
+        mode="aspectFit"
+      ></image>
+      <image v-else class="back-icon" src="/static/tabs/back.png" mode="aspectFit"></image>
     </view>
     <text class="header-title">{{ title }}</text>
     <view class="header-placeholder"></view>

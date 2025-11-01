@@ -88,7 +88,8 @@ const handleItemClick = (item: StudyItem) => {
 
 <style lang="scss" scoped>
 .study-list {
-  height: calc(100vh - 300rpx);
+  height: 100vh;
+  padding-bottom: var(--safe-area-bottom-padding);
   width: 100%;
 }
 
