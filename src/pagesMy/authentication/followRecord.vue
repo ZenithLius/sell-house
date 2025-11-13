@@ -7,27 +7,32 @@
       :showBack="true"
       class="navbar-fixed"
     />
+
     <scroll-view
       scroll-y
       class="content"
       :class="{ 'has-bottom-btn': currentRole === 'manager' }"
       :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }"
+      refresher-enabled
+      :refresher-triggered="isTriggered"
+      @refresherrefresh="onRefresherrefresh"
+      @scrolltolower="handleScrollToLower"
     >
       <!-- 房源标题 -->
       <view class="house-title">{{ houseTitle }}</view>
 
       <!-- 跟进记录列表 -->
       <view class="record-list">
-        <view v-for="(record, index) in recordList" :key="index" class="record-item">
+        <view v-for="(record, index) in list" :key="index" class="record-item">
           <!-- 时间 -->
           <view class="record-header">
             <view class="time-dot"></view>
-            <text class="record-time">{{ record.time }}</text>
+            <text class="record-time">{{ record.created_time }}</text>
           </view>
 
           <!-- 内容 -->
           <view class="record-body">
-            <text class="record-person">跟进人：{{ record.person }}</text>
+            <text class="record-person">跟进人：{{ record.user_name }}</text>
             <text class="record-title">{{ record.title }}</text>
             <text class="record-content">{{ record.content }}</text>
 
@@ -45,29 +50,94 @@
           </view>
         </view>
       </view>
+
+      <!-- 加载状态 -->
+      <view v-if="isLoading" class="loading-more">加载中...</view>
+      <view v-else-if="!hasMore && list.length > 0" class="no-more">没有更多了</view>
+      <view v-else-if="isEmpty" class="empty-tip">暂无跟进记录</view>
     </scroll-view>
     <ShBottomBtns
       v-if="currentRole !== 'manager'"
       backgroundColor="#fff"
+      :paddingBottom="20"
       :buttons="bottomButtons"
       @click="handleButtonClick"
     />
-    <BottomTabbar />
+    <!-- <BottomTabbar /> -->
+    <!-- <ShBottomTabbar /> -->
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BottomTabbar from './components/BottomTabbar.vue'
-
+import { followRecordListAPI, followRecordListManagerAPI } from '@/pagesMy/services/staff'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { useScrollRefresh } from '@/composables/testUseScroller'
 const currentRole = uni.getStorageSync('currentOtherManageType')
 
+/**
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+const currentHouseId = ref('')
+const houseTitle = ref('')
+
+// 定义数据获取函数
+const fetchFollowRecordData = async (page: number) => {
+  const params = {
+    house_list_id: currentHouseId.value,
+    page,
+    per_page: 10,
+  }
+  const res =
+    currentRole === 'manager'
+      ? await followRecordListManagerAPI(params)
+      : await followRecordListAPI(params)
+  if (res.code === 200) {
+    const processedList = (res.data.list || []).map((item: RecordItem) => ({
+      ...item,
+      images: item.mul_img?.split(',').filter(Boolean) || [],
+    }))
+    return processedList
+  }
+  return []
+}
+
+const {
+  list,
+  isLoading,
+  hasMore,
+  isTriggered,
+  isEmpty,
+  onRefresherrefresh,
+  handleScrollToLower,
+  refresh,
+} = useScrollRefresh<RecordItem>({
+  fetchData: fetchFollowRecordData,
+  pageSize: 10,
+  immediate: false,
+})
+
+onLoad(async (options) => {
+  currentHouseId.value = options?.house_list_id || ''
+  houseTitle.value = options?.title || ''
+  await refresh()
+})
+
+onShow(async () => {
+  if (currentHouseId.value) {
+    await refresh()
+  }
+})
+
 interface RecordItem {
-  time: string
-  person: string
+  created_time: string
+  user_name: string
   title: string
   content: string
   images?: string[]
+  mul_img?: string
 }
 const bottomButtons = [
   {
@@ -79,110 +149,12 @@ const bottomButtons = [
 const handleButtonClick = (index: number) => {
   if (index === 0) {
     uni.navigateTo({
-      url: '/pagesMy/authentication/addRecord',
+      url: `/pagesMy/authentication/addRecord?house_list_id=${currentHouseId.value}`,
     })
   }
 }
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
-
-const houseTitle = ref('房源名称标题')
-
-const recordList = ref<RecordItem[]>([
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    time: '2025.09.04 10:00:00',
-    person: '李四',
-    title: '标题文字',
-    content: '内容文字介绍详情内容文字介绍详情内容文字介绍详情内容文字介绍详情',
-    images: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-])
 
 const handleBack = () => {
   uni.navigateBack()
@@ -213,10 +185,10 @@ const previewImage = (images: string[], currentUrl: string) => {
 .content {
   padding: 0 30rpx;
   background: #fff;
-  height: calc(100vh - env(safe-area-inset-bottom) - 240rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 10rpx);
 }
 .has-bottom-btn {
-  height: calc(100vh - env(safe-area-inset-bottom) - 120rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 10rpx);
 }
 
 .house-title {
@@ -234,9 +206,6 @@ const previewImage = (images: string[], currentUrl: string) => {
   flex-direction: column;
   gap: 32rpx;
   padding-bottom: 32rpx;
-}
-
-.record-item {
 }
 
 .record-header {
@@ -307,5 +276,18 @@ const previewImage = (images: string[], currentUrl: string) => {
   height: 120rpx;
   border-radius: 12rpx;
   flex-shrink: 0;
+}
+
+.loading-more,
+.no-more,
+.empty-tip {
+  text-align: center;
+  padding: 40rpx 0;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.empty-tip {
+  padding: 120rpx 0;
 }
 </style>

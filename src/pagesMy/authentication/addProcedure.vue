@@ -15,15 +15,57 @@
       @click="handleButtonClick"
       :backgroundColor="'#ffffff'"
     />
-    <BottomTabbar />
+    <!-- <BottomTabbar /> -->
+    <ShBottomTabbar />
   </view>
 </template>
 
 <script setup lang="ts">
 const { safeAreaInsets } = uni.getSystemInfoSync()
 import type { CustomFormField } from '@/types/customFormField'
-import BottomTabbar from './components/BottomTabbar.vue'
 import { ref } from 'vue'
+import { createProcedureAPI, getProcedureStatusAPI } from '../services/staff'
+import { onLoad } from '@dcloudio/uni-app'
+
+const houseListId = ref<string | number>('')
+onLoad((options) => {
+  houseListId.value = options?.house_list_id || ''
+})
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+// 新增手续
+const createProcedureReq = async () => {
+  const params = {
+    house_list_id: houseListId.value,
+    remark: formData.value.remark,
+    type_id: formData.value.type_id,
+  }
+  uni.showLoading({
+    title: '提交中',
+  })
+  const res = await createProcedureAPI(params)
+  uni.hideLoading()
+
+  if (res.code === 200) {
+    uni.showToast({
+      title: '提交成功',
+      icon: 'none',
+    })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1000)
+  } else {
+    uni.showToast({
+      title: '提交失败',
+      icon: 'none',
+    })
+  }
+}
 
 const bottomButtons = [
   {
@@ -35,31 +77,38 @@ const bottomButtons = [
 
 const handleButtonClick = (index: number) => {
   if (index === 0) {
-    console.log('保存/修改======', formData.value)
-  } else if (index === 1) {
-    console.log('续约')
+    createProcedureReq()
   }
 }
 
 const formData = ref({
-  communityName: '',
-  area: '',
+  type_id: '',
+  remark: '',
 })
 
 const fields: CustomFormField[] = [
   {
-    key: 'communityName',
+    key: 'type_id',
     label: '手续状态',
     type: 'select',
     placeholder: '请选择',
     options: [
-      { label: '完结', value: '完结' },
-      { label: '放款', value: '放款' },
-      { label: '过户', value: '过户' },
+      {
+        title: '过户',
+        id: 1,
+      },
+      {
+        title: '放款',
+        id: 2,
+      },
+      {
+        title: '完结',
+        id: 3,
+      },
     ],
   },
   {
-    key: 'area',
+    key: 'remark',
     label: '备注',
     type: 'textarea',
     placeholder: '请描述你的问题',

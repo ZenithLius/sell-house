@@ -1,37 +1,63 @@
 <script setup lang="ts">
-// 定义 props
+import { ref, watch } from 'vue'
+
 interface Props {
   placeholder?: string
   buttonText?: string
   backgroundColor?: string
+  modelValue?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   placeholder: '你想看什么呢？',
   buttonText: '搜索',
   backgroundColor: 'rgba(255, 255, 255, 0.34)',
+  modelValue: '',
 })
 
-// 定义事件
 const emit = defineEmits<{
-  search: []
-  clickButton: []
+  'update:modelValue': [value: string]
+  search: [value: string]
+  clickButton: [value: string]
 }>()
 
-const handleSearch = () => {
-  emit('search')
+const inputValue = ref(props.modelValue)
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    inputValue.value = newVal
+  },
+)
+
+const handleInput = (e: any) => {
+  const value = e.detail.value
+  inputValue.value = value
+  emit('update:modelValue', value)
+}
+
+const handleConfirm = () => {
+  emit('search', inputValue.value)
 }
 
 const handleButtonClick = () => {
-  emit('clickButton')
+  emit('clickButton', inputValue.value)
 }
 </script>
 
 <template>
-  <view class="search" :style="{ background: backgroundColor }" @tap="handleSearch">
+  <view class="search" :style="{ background: backgroundColor }">
     <view class="search-left">
       <image class="search-icon" src="@/static/index/search.png"></image>
-      <text class="search-text">{{ placeholder }}</text>
+      <input
+        class="search-text"
+        type="text"
+        :placeholder="placeholder"
+        :value="inputValue"
+        @input="handleInput"
+        @confirm="handleConfirm"
+        confirm-type="search"
+      />
     </view>
     <text class="search-button" @tap.stop="handleButtonClick">{{ buttonText }}</text>
   </view>
@@ -48,7 +74,6 @@ const handleButtonClick = () => {
   color: #fff;
   font-size: 28rpx;
   border-radius: 38rpx;
-  cursor: pointer;
   pointer-events: auto;
 }
 
@@ -64,9 +89,17 @@ const handleButtonClick = () => {
 }
 
 .search-text {
+  flex: 1;
   font-family: Source Han Sans CN;
   font-weight: 400;
   font-size: 24rpx;
+  color: #775796;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.search-text::placeholder {
   color: #775796;
 }
 

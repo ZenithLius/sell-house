@@ -3,8 +3,8 @@ import { ref } from 'vue'
 
 interface InvestorItem {
   id: string | number
-  name: string
-  phone: string
+  nickname: string
+  mobile: string
 }
 
 const props = defineProps({
@@ -64,7 +64,7 @@ const handleSelect = (id: string | number) => {
         <!-- 左侧手机图标 -->
         <view class="left">
           <view class="top">
-            <text class="item-name">{{ item.name }}</text></view
+            <text class="item-name">{{ item.nickname }}</text></view
           >
           <view class="bottom">
             <view class="icon-wrapper">
@@ -73,7 +73,7 @@ const handleSelect = (id: string | number) => {
 
             <!-- 中间内容 -->
             <view class="item-content">
-              <text class="item-phone">{{ item.phone }}</text>
+              <text class="item-phone">{{ item.mobile }}</text>
             </view>
           </view>
         </view>
@@ -118,7 +118,7 @@ const handleSelect = (id: string | number) => {
 .investor-list {
   flex: 1;
   width: 100%;
-  height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
+  height: calc(100vh - env(safe-area-inset-bottom) - 100rpx);
   background: #ffffff;
 }
 

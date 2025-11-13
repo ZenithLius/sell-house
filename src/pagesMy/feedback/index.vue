@@ -11,7 +11,7 @@
       <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
       <view class="list-wrapper">
         <FeedbackList
-          v-if="activeTab === 'unreply'"
+          v-if="activeTab === '0'"
           :list="unreplyList"
           :loading="unreplyLoading"
           :hasMore="unreplyHasMore"
@@ -34,6 +34,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import FeedbackList from './components/FeedbackList.vue'
+import { getFeedbackListAPI } from '@/services/my'
+import type { FeedbackItem as ApiFeedbackItem } from '@/services/my'
 import FeedbackReplyList from './components/FeedbackReplyList.vue'
 
 interface FeedbackItem {
@@ -54,10 +56,10 @@ interface ReplyFeedbackItem {
   replyContent: string
 }
 
-const activeTab = ref('unreply')
+const activeTab = ref('0')
 const tabs = [
-  { label: '未回复', value: 'unreply', badge: false },
-  { label: '已回复', value: 'reply', badge: true },
+  { title: '未回复', id: '0', badge: false },
+  { title: '已回复', id: '1', badge: true },
 ]
 
 // 未回复列表数据
@@ -75,10 +77,34 @@ const replyPage = ref(1)
 const handleTabChange = (value: string) => {
   console.log('当前选中的 tab:', value)
   // 切换tab时，如果列表为空则加载数据
-  if (value === 'unreply' && unreplyList.value.length === 0) {
+  if (value === '0' && unreplyList.value.length === 0) {
     loadUnreplyList()
-  } else if (value === 'reply' && replyList.value.length === 0) {
+  } else if (value === '1' && replyList.value.length === 0) {
     loadReplyList()
+  }
+}
+
+// 将 API 数据转换为未回复列表格式
+const transformToFeedbackItem = (apiItem: ApiFeedbackItem): FeedbackItem => {
+  return {
+    id: apiItem.created_at || '', // 使用创建时间作为临时 ID
+    title: apiItem.house_list_title || '未知房源',
+    community: apiItem.pharmacist_title || '未知小区',
+    content: apiItem.content || '',
+    date: apiItem.created_time || apiItem.created_at || '',
+  }
+}
+
+// 将 API 数据转换为已回复列表格式
+const transformToReplyFeedbackItem = (apiItem: ApiFeedbackItem): ReplyFeedbackItem => {
+  return {
+    id: apiItem.created_at || '', // 使用创建时间作为临时 ID
+    title: apiItem.house_list_title || '未知房源',
+    community: apiItem.pharmacist_title || '未知小区',
+    content: apiItem.content || '',
+    date: apiItem.created_time || apiItem.created_at || '',
+    replyTime: apiItem.created_at || '',
+    replyContent: apiItem.answer_content || '暂无回复内容',
   }
 }
 
@@ -88,94 +114,20 @@ const loadUnreplyList = async () => {
 
   unreplyLoading.value = true
   try {
-    // const res = await uni.request({
-    //   url: '/api/feedback/unreply',
-    //   data: { page: unreplyPage.value, pageSize: 10 }
-    // })
+    // 调用后台接口获取未回复列表
+    const res = await getFeedbackListAPI({ is_answer: '0' })
 
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: FeedbackItem[] = [
-      {
-        id: 1,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 2,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-      },
-    ]
+    const list = res.data.list || []
+    const transformedList = list.map(transformToFeedbackItem)
 
     if (unreplyPage.value === 1) {
-      unreplyList.value = mockData
+      unreplyList.value = transformedList
     } else {
-      unreplyList.value.push(...mockData)
+      unreplyList.value.push(...transformedList)
     }
 
-    // 模拟没有更多数据
-    if (unreplyPage.value >= 2) {
+    // 判断是否还有更多数据
+    if (list.length === 0 || (res.data.per_page && list.length < res.data.per_page)) {
       unreplyHasMore.value = false
     }
   } catch (error) {
@@ -201,52 +153,20 @@ const loadReplyList = async () => {
 
   replyLoading.value = true
   try {
-    // const res = await uni.request({
-    //   url: '/api/feedback/reply',
-    //   data: { page: replyPage.value, pageSize: 10 }
-    // })
+    // 调用后台接口获取已回复列表
+    const res = await getFeedbackListAPI({ is_answer: '1' })
 
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: ReplyFeedbackItem[] = [
-      {
-        id: 1,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-        replyTime: '2025.09.02 10:00:00',
-        replyContent:
-          '反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍反馈内容文字介绍',
-      },
-      {
-        id: 2,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修 婚装 南北通透',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-        replyTime: '2025.09.02 11:30:00',
-        replyContent: '感谢您的反馈，我们已经收到您的意见，会尽快处理。',
-      },
-      {
-        id: 3,
-        title: '未央区 天朗御湖1-1-603西南朝向 精装修',
-        community: '天朗御湖',
-        content: '天朗御湖',
-        date: '2025.09.02 10:00:00',
-        replyTime: '2025.09.02 15:00:00',
-        replyContent: '您好，关于您反馈的问题，我们已经核实并处理完成，感谢您的支持。',
-      },
-    ]
+    const list = res.data.list || []
+    const transformedList = list.map(transformToReplyFeedbackItem)
 
     if (replyPage.value === 1) {
-      replyList.value = mockData
+      replyList.value = transformedList
     } else {
-      replyList.value.push(...mockData)
+      replyList.value.push(...transformedList)
     }
 
-    // 模拟没有更多数据
-    if (replyPage.value >= 2) {
+    // 判断是否还有更多数据
+    if (list.length === 0 || (res.data.per_page && list.length < res.data.per_page)) {
       replyHasMore.value = false
     }
   } catch (error) {

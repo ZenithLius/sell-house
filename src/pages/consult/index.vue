@@ -2,120 +2,94 @@
 import { ref } from 'vue'
 import NoticeList from './components/NoticeList.vue'
 import StudyList from './components/StudyList.vue'
+import {
+  getConsultListAPI,
+  getConsultCategoryAPI,
+  type ConsultCategoryItem,
+  type ConsultListItem,
+} from '@/services/consult'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { useScrollRefresh } from '@/composables/testUseScroller'
+
+type TabItem = ConsultCategoryItem
+
+onLoad(async () => {})
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+const currentTabId = ref(-1)
+
+onShow(async () => {
+  await getConsultCategoryReq()
+  await refresh()
+})
+
+// 定义数据获取函数
+const fetchConsultData = async (page: number) => {
+  uni.showLoading({
+    title: '加载中',
+  })
+  const res = await getConsultListAPI({
+    type_id: currentTabId.value,
+    page,
+    per_page: 10,
+  })
+  uni.hideLoading()
+  if (res.code === 200) {
+    return res.data.list || res.data || []
+  }
+  return []
+}
+
+const {
+  list: noticeList,
+  isLoading,
+  hasMore,
+  isTriggered,
+  onRefresherrefresh,
+  handleScrollToLower,
+  refresh,
+} = useScrollRefresh<ConsultListItem>({
+  fetchData: fetchConsultData,
+  pageSize: 10,
+  immediate: false,
+})
+
+const getConsultCategoryReq = async () => {
+  uni.showLoading({
+    title: '加载中...',
+  })
+  const res = await getConsultCategoryAPI()
+  tabs.value = res.data
+  currentTabType.value = tabs.value[0].type
+  currentTabId.value = tabs.value[0].id
+  await refresh()
+  uni.hideLoading()
+}
 
 const back = () => {
   uni.switchTab({ url: '/pages/index/index' })
 }
 
 // Tab 配置
-const tabs = [
-  { label: '公告', value: 'notice', badge: false },
-  { label: '喜报', value: 'good-news', badge: true },
-  { label: '学习天地', value: 'study', badge: false },
-]
+const tabs = ref<TabItem[]>([])
 
-const activeTab = ref('notice')
-
-const handleTabChange = (value: string) => {
-  console.log('当前选中的 tab:', value)
+const activeTab = ref(101)
+const currentTabType = ref(-1)
+const handleTabChange = async (value: number) => {
+  currentTabType.value = tabs.value.find((tab) => tab.id === value)?.type ?? -1
+  currentTabId.value = value
+  await refresh()
 }
 
-// 公告列表数据
-interface NoticeItem {
-  id: string | number
-  title: string
-  date: string
-}
-
-const noticeList = ref<NoticeItem[]>([
-  {
-    id: 1,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 2,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 3,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-  },
-])
-const noticeLoading = ref(false)
-const noticeHasMore = ref(true)
-
-// 加载更多公告
-const loadMoreNotice = async () => {
-  if (noticeLoading.value || !noticeHasMore.value) return
-
-  noticeLoading.value = true
-  try {
-    // TODO
-    // const res = await getNoticeList({ page: currentPage.value, pageSize: 10 })
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // 模拟数据
-    const newData: NoticeItem[] = [
-      {
-        id: noticeList.value.length + 1,
-        title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-        date: '2025.09.18',
-      },
-      {
-        id: noticeList.value.length + 2,
-        title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-        date: '2025.09.18',
-      },
-    ]
-
-    noticeList.value = [...noticeList.value, ...newData]
-
-    // 没有更多
-    if (noticeList.value.length >= 20) {
-      noticeHasMore.value = false
-    }
-  } catch (error) {
-    console.error('加载公告失败:', error)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
-  } finally {
-    noticeLoading.value = false
-  }
-}
+type NoticeItem = ConsultListItem
 
 // 点击公告项
 const handleNoticeClick = (item: NoticeItem) => {
-  console.log('点击公告:', item)
   uni.navigateTo({ url: `/pagesConsult/detailConsult?id=${item.id}` })
 }
 
@@ -126,129 +100,6 @@ interface StudyItem {
   date: string
   cover: string
 }
-
-const studyList = ref<StudyItem[]>([
-  {
-    id: 1,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=1',
-  },
-  {
-    id: 2,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=2',
-  },
-  {
-    id: 3,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=3',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-  {
-    id: 4,
-    title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-    date: '2025.09.18',
-    cover: 'https://picsum.photos/220/156?random=4',
-  },
-])
-const studyLoading = ref(false)
-const studyHasMore = ref(true)
-
-// 加载更多学习内容
-const loadMoreStudy = async () => {
-  if (studyLoading.value || !studyHasMore.value) return
-
-  studyLoading.value = true
-  try {
-    // TODO: 这里调用你的接口获取数据
-    // const res = await getStudyList({ page: currentPage.value, pageSize: 10 })
-
-    // 模拟接口请求
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // 模拟数据
-    const newData: StudyItem[] = [
-      {
-        id: studyList.value.length + 1,
-        title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-        date: '2025.09.18',
-        cover: `https://picsum.photos/220/156?random=${studyList.value.length + 1}`,
-      },
-      {
-        id: studyList.value.length + 2,
-        title: '公告标题内容公告标题内容公告标题内容公告标题内容',
-        date: '2025.09.18',
-        cover: `https://picsum.photos/220/156?random=${studyList.value.length + 2}`,
-      },
-    ]
-
-    studyList.value = [...studyList.value, ...newData]
-
-    // 如果数据量达到一定数量，设置没有更多
-    if (studyList.value.length >= 20) {
-      studyHasMore.value = false
-    }
-  } catch (error) {
-    console.error('加载学习内容失败:', error)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
-  } finally {
-    studyLoading.value = false
-  }
-}
-
-// 点击学习项
-const handleStudyClick = (item: StudyItem) => {
-  console.log('点击学习内容:', item)
-  // TODO: 跳转到学习详情页
-  // uni.navigateTo({ url: `/pages/consult/study-detail?id=${item.id}` })
-}
 </script>
 
 <template>
@@ -256,34 +107,30 @@ const handleStudyClick = (item: StudyItem) => {
     <ShNavbar @back="back" :title="'资讯'" :showBack="true" />
     <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
 
-    <view class="content">
+    <scroll-view
+      class="content"
+      scroll-y
+      refresher-enabled
+      :refresher-triggered="isTriggered"
+      @refresherrefresh="onRefresherrefresh"
+      @scrolltolower="handleScrollToLower"
+    >
       <NoticeList
-        v-if="activeTab === 'notice'"
+        v-if="currentTabType === 0"
         :list="noticeList"
-        :loading="noticeLoading"
-        :has-more="noticeHasMore"
-        @load-more="loadMoreNotice"
-        @item-click="handleNoticeClick"
-      />
-      <NoticeList
-        v-else-if="activeTab === 'good-news'"
-        :list="noticeList"
-        :loading="noticeLoading"
-        :has-more="noticeHasMore"
-        @load-more="loadMoreNotice"
+        :loading="isLoading"
+        :has-more="hasMore"
         @item-click="handleNoticeClick"
       />
       <StudyList
-        v-else-if="activeTab === 'study'"
-        :list="studyList"
-        :loading="studyLoading"
-        :has-more="studyHasMore"
-        @load-more="loadMoreStudy"
-        @item-click="handleStudyClick"
+        v-else-if="currentTabType === 1"
+        :list="noticeList"
+        :loading="isLoading"
+        :has-more="hasMore"
+        @item-click="handleNoticeClick"
       />
-    </view>
+    </scroll-view>
 
-    <!-- 自定义 TabBar -->
     <ShMainTabbar />
   </view>
 </template>
@@ -297,5 +144,6 @@ const handleStudyClick = (item: StudyItem) => {
 
 .content {
   width: 100%;
+  height: calc(100vh - env(safe-area-inset-top) - 180rpx);
 }
 </style>

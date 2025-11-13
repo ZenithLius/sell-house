@@ -121,6 +121,7 @@ const handleItemClick = (item: FeedbackItem) => {
 }
 
 .item-info {
+  display: flex;
   font-family: Source Han Sans CN;
   font-weight: 400;
   font-size: 24rpx;
@@ -147,6 +148,9 @@ const handleItemClick = (item: FeedbackItem) => {
   font-size: 24rpx;
   color: #6a6a6a;
   flex: 1;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: normal;
 }
 
 .loading-wrapper {

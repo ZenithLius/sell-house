@@ -2,20 +2,21 @@
 import { ref } from 'vue'
 
 interface AgentAuthItem {
-  id: string | number
-  image: string
-  title: string
-  layout: string // 户型
-  area: string // 面积
-  floor: string // 楼层
-  district: string // 小区
-  price: number // 总价（万）
-  unitPrice: number // 单价（元/㎡）
-  commission: string // 佣金
-  totalAmount: number // 成单金额
-  agentFee: number // 出房中介费
-  dealBonus: number // 出房成交奖
-  datetime: string // 时间
+  agency_fee: string
+  award: string
+  commission: string
+  created_at: string
+  examine_at: string | null
+  floor_img: string
+  house_title: string
+  per_price: string
+  pharmacist_title: string
+  pic: string
+  style_bedroom: number
+  style_house_title: string
+  style_livingroom: number
+  total_price: string
+  house_list_title: string
 }
 
 const props = defineProps({
@@ -31,11 +32,16 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
   itemClick: [item: AgentAuthItem]
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
@@ -57,6 +63,14 @@ const handleScrollToLower = () => {
 const handleItemClick = (item: AgentAuthItem) => {
   emit('itemClick', item)
 }
+
+// 下拉刷新
+const onRefresh = () => {
+  emit('refresh')
+}
+
+// 刷新恢复
+const onRestore = () => {}
 </script>
 
 <template>
@@ -64,43 +78,56 @@ const handleItemClick = (item: AgentAuthItem) => {
     class="agent-auth-list"
     scroll-y
     :scroll-top="scrollTop"
+    refresher-enabled
+    :refresher-triggered="refreshing"
+    @refresherrefresh="onRefresh"
+    @refresherrestore="onRestore"
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="auth-item" @tap="handleItemClick(item)">
+      <view
+        v-for="(item, index) in list"
+        :key="index"
+        class="auth-item"
+        @tap="handleItemClick(item)"
+      >
         <view class="item-main">
           <view class="top">
             <!-- 左侧图片 -->
-            <image class="item-image" :src="item.image" mode="aspectFill"></image>
+            <image class="item-image" :src="item.pic" mode="aspectFill"></image>
 
             <!-- 右侧信息 -->
             <view class="item-info">
               <!-- 日期时间 -->
-              <text class="item-datetime">{{ item.datetime }}</text>
+              <text class="item-datetime">{{ item.created_at }}</text>
 
               <!-- 标题 -->
-              <text class="item-title">{{ item.title }}</text>
+              <text class="item-title">{{ item.house_title || item.house_list_title }}</text>
 
               <!-- 房源基本信息 -->
               <view class="item-basic">
-                <text class="basic-text">{{ item.layout }}</text>
-                <text class="basic-text">{{ item.area }}㎡</text>
-                <text class="basic-text">{{ item.floor }}</text>
-                <text class="basic-text">{{ item.district }}</text>
+                <text class="basic-text"
+                  >{{ item.style_livingroom }}室{{ item.style_bedroom }}厅</text
+                >
+                <text class="basic-text"
+                  >{{ (Number(item.total_price) / Number(item.per_price)).toFixed(2) }}㎡</text
+                >
+                <text class="basic-text">{{ item.style_house_title }}</text>
+                <text class="basic-text">{{ item.pharmacist_title }}</text>
               </view>
 
               <!-- 价格信息 -->
               <view class="item-price-row">
                 <view class="price-info">
-                  <text class="price-main">{{ item.price }}万</text>
-                  <text class="price-unit">{{ item.unitPrice }}元/㎡</text>
+                  <text class="price-main">{{ item.total_price }}万</text>
+                  <text class="price-unit">{{ item.per_price }}元/㎡</text>
                 </view>
               </view>
             </view>
           </view>
           <view class="bottom">
             <!-- 佣金标签 -->
-            <view class="commission-badge">
+            <view v-if="item.commission" class="commission-badge">
               <image class="commission-icon" src="/static/images/commission.png"></image>
               <text class="commission-text">{{ item.commission }}</text>
             </view>
@@ -111,16 +138,16 @@ const handleItemClick = (item: AgentAuthItem) => {
         <view class="item-amounts">
           <view class="amount-row">
             <text class="amount-label total">成单金额</text>
-            <text class="amount-value total">¥ {{ item.totalAmount.toFixed(2) }}</text>
+            <text class="amount-value total">¥ {{ item.total_price }}</text>
           </view>
           <view class="divider"></view>
           <view class="amount-row">
             <text class="amount-label">出房中介费</text>
-            <text class="amount-value">¥ {{ item.agentFee.toFixed(2) }}</text>
+            <text class="amount-value">¥ {{ item.agency_fee }}</text>
           </view>
           <view class="amount-row">
             <text class="amount-label">出房成交奖</text>
-            <text class="amount-value">¥ {{ item.dealBonus.toFixed(2) }}</text>
+            <text class="amount-value">¥ {{ item.award }}</text>
           </view>
         </view>
       </view>

@@ -81,8 +81,8 @@ const fields: CustomFormField[] = [
     label: 'none',
     type: 'radio-group',
     options: [
-      { label: '审核通过', value: 'approved' },
-      { label: '审核驳回', value: 'rejected' },
+      { title: '审核通过', id: 'approved' },
+      { title: '审核驳回', id: 'rejected' },
     ],
   },
   {
@@ -234,10 +234,10 @@ const staffFilterConfigs: FilterConfig[] = [
   {
     label: '下属员工',
     options: [
-      { label: '天朗御湖', value: 'tianlang' },
-      { label: '阳光花园', value: 'yangguang' },
-      { label: '帮帮小区', value: 'bangbang' },
-      { label: '地铁新城', value: 'ditie' },
+      { title: '天朗御湖', id: 'tianlang' },
+      { title: '阳光花园', id: 'yangguang' },
+      { title: '帮帮小区', id: 'bangbang' },
+      { title: '地铁新城', id: 'ditie' },
     ],
   },
 ]

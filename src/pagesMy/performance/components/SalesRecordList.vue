@@ -21,15 +21,25 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
+  refresh: []
   itemClick: [item: PerformanceItem]
 }>()
 
 const scrollTop = ref(0)
 const isLoadingMore = ref(false)
+
+// 下拉刷新
+const handleRefresh = () => {
+  emit('refresh')
+}
 
 // 触底加载
 const handleScrollToLower = () => {
@@ -54,6 +64,9 @@ const handleItemClick = (item: PerformanceItem) => {
     class="performance-list"
     scroll-y
     :scroll-top="scrollTop"
+    refresher-enabled
+    :refresher-triggered="refreshing"
+    @refresherrefresh="handleRefresh"
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">

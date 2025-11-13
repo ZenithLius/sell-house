@@ -3,35 +3,40 @@
     <ShNavbar
       @back="handleBack"
       v-show="true"
-      :title="'负责人'"
+      :title="isRegister ? '负责人' : '身份认证'"
       :showBack="true"
       class="navbar-fixed"
-      :home="true"
+      :home="false"
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
-      <view class="head">
-        <image src="@/pagesMy/static/upload.png" mode="aspectFit" class="head-icon"></image>
-        <view class="label">负责人：</view>
-        <view class="value">张三</view>
-        <!-- 测试用：切换身份按钮 -->
-        <view class="role-switch" @tap="switchRole">
-          <text class="role-text">{{ userRole }}</text>
+      <view v-if="!isRegister" class="not-register">
+        <ShAuthRegisterSection :type="type" @view-agreement="handleViewAgreement" />
+      </view>
+      <view v-else class="isRegister">
+        <view class="head">
+          <image src="@/pagesMy/static/upload.png" mode="aspectFit" class="head-icon"></image>
+          <view class="label">负责人：</view>
+          <view class="value">{{ manageName }}</view>
+          <!-- 测试用：切换身份按钮 -->
+          <!-- <view class="role-switch" @tap="switchRole">
+            <text class="role-text">{{ userRole }}</text>
+          </view> -->
         </view>
-      </view>
 
-      <view class="tab">
-        <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
-      </view>
+        <view class="tab">
+          <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
+        </view>
 
-      <view class="list">
-        <RenovationList
-          :list="currentList"
-          :loading="loading"
-          :hasMore="hasMore"
-          :actionButtons="getActionButtons"
-          @loadMore="handleLoadMore"
-          @buttonClick="handleButtonClick"
-        />
+        <view class="list">
+          <RenovationList
+            :list="currentList"
+            :loading="loading"
+            :hasMore="hasMore"
+            :actionButtons="getActionButtons"
+            @loadMore="handleLoadMore"
+            @buttonClick="handleButtonClick"
+          />
+        </view>
       </view>
 
       <ShPopup
@@ -69,6 +74,69 @@ import RenovationList, {
   type AuditProgress,
 } from './components/RenovationList.vue'
 import ShPopup from '@/components/ShPopup.vue'
+import { getForemanListAPI, getRenovationListAPI } from './services'
+
+/**
+ * ==========================================================================
+ *                                 @认证相关
+ * ==========================================================================
+ */
+import { useUserStore } from '@/stores'
+import { onLoad } from '@dcloudio/uni-app'
+const userStore = useUserStore()
+
+const isRegister = computed(() => {
+  return userStore.userInfo?.is_project_manager === 1 || userStore.userInfo?.is_foreman === 1
+})
+// 当前角色 project_manager 装修负责人 foreman 工长
+const currentRole = computed(() => {
+  if (userStore.userInfo?.is_project_manager === 1) {
+    return 'project_manager'
+  } else if (userStore.userInfo?.is_foreman === 1) {
+    return 'foreman'
+  }
+  return null
+})
+const type = ref('renovation')
+
+const handleViewAgreement = () => {
+  console.log('查看协议')
+}
+
+/**
+ * ==========================================================================
+ *                                 认证相关结束
+ * ==========================================================================
+ */
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+onLoad(() => {
+  getRenovationListReq()
+})
+
+/**
+ * ==================================获取房源列表========================================
+ */
+const manageName = ref('')
+const getRenovationListReq = async () => {
+  const params = {
+    page: 1,
+    per_page: 10,
+    [currentRole.value === 'project_manager' ? 'allocate_status' : 'status']: activeTab.value,
+  }
+  const res =
+    currentRole.value === 'project_manager'
+      ? await getRenovationListAPI(params)
+      : await getForemanListAPI(params)
+
+  currentList.value = res.data.list.list
+  manageName.value = res.data.nickname
+}
 
 // =========================================弹窗相关=============================================
 const shPopupRef = ref<InstanceType<typeof ShPopup> | null>(null)
@@ -102,8 +170,8 @@ const fields: CustomFormField[] = [
     head: '',
     type: 'radio-group',
     options: [
-      { label: '审核通过', value: 'approved' },
-      { label: '审核驳回', value: 'rejected' },
+      { title: '审核通过', id: 'approved' },
+      { title: '审核驳回', id: 'rejected' },
     ],
     placeholder: '',
   },
@@ -148,54 +216,54 @@ const switchRole = () => {
 
 // 根据用户身份配置按钮
 const getActionButtons = computed((): ActionButton[] => {
-  const role = userRole.value
-
   // 管理员：显示所有按钮
-  if (role === 'admin') {
+  if (activeTab.value === '0' && currentRole.value === 'project_manager') {
+    return [
+      { key: 'taskManage', label: '任务管理' },
+      { key: 'renovationRecord', label: '装修记录' },
+    ]
+  }
+  if (activeTab.value === '1' && currentRole.value === 'project_manager') {
     return [
       { key: 'taskManage', label: '任务管理' },
       { key: 'renovationRecord', label: '装修记录' },
       { key: 'reportComplete', label: '上报完工' },
     ]
   }
-
-  // 负责人：显示部分按钮
-  if (role === 'manager') {
+  if (activeTab.value === '2' && currentRole.value === 'project_manager') {
+    return [
+      { key: 'taskManage', label: '任务管理' },
+      { key: 'approve', label: '审核中' },
+    ]
+  }
+  if (activeTab.value === '3' && currentRole.value === 'project_manager') {
     return [
       { key: 'taskManage', label: '任务管理' },
       { key: 'renovationRecord', label: '装修记录' },
-      { key: 'approve', label: '审批' },
     ]
   }
-
-  return [
-    { key: 'renovationRecord', label: '装修记录' },
-    { key: 'approve', label: '审核' },
-    { key: 'reportComplete', label: '已驳回' },
-    { key: 'reportComplete', label: '完工成功' },
-  ]
+  return []
 })
 
 // Tab 配置
 const tabs = computed((): any[] => {
-  const role = userRole.value
-  if (role === 'manager') {
+  if (currentRole.value === 'project_manager') {
     return [
-      { label: '未施工', value: 'not-started', badge: false },
-      { label: '施工中', value: 'in-progress', badge: false },
-      { label: '已完工', value: 'completed', badge: false },
-      { label: '已交付', value: 'delivery', badge: false },
+      { title: '未施工', id: '0', badge: false },
+      { title: '施工中', id: '1', badge: false },
+      { title: '已完工', id: '2', badge: false },
+      { title: '已交付', id: '3', badge: false },
     ]
   }
 
   return [
-    { label: '待审核', value: 'not-started', badge: false },
-    { label: '已审核', value: 'in-progress', badge: false },
-    { label: '全部', value: 'completed', badge: false },
+    { title: '待审核', id: '1', badge: false },
+    { title: '已审核', id: '2', badge: false },
+    { title: '全部', id: '0', badge: false },
   ]
 })
 
-const activeTab = ref('not-started')
+const activeTab = ref('0')
 
 // 列表数据
 const loading = ref(false)
@@ -362,7 +430,7 @@ const allLists = ref<Record<string, RenovationItem[]>>({
   delivery: [],
 })
 
-const currentList = computed(() => allLists.value[activeTab.value] || [])
+const currentList = ref<any[]>([])
 
 // 初始化加载
 const initLoad = () => {
@@ -380,7 +448,9 @@ const initLoad = () => {
 
 // Tab 切换
 const handleTabChange = (value: string) => {
+  console.log('切换tab', value)
   activeTab.value = value
+  getRenovationListReq()
   if (allLists.value[value].length === 0) {
     initLoad()
   }
@@ -414,7 +484,6 @@ const handleButtonClick = (key: string, item: RenovationItem) => {
 
   switch (key) {
     case 'taskManage':
-      // uni.navigateTo({ url: `/pagesRenovation/taskManagement?id=${item.id}` })
       uni.navigateTo({ url: `/pagesRenovation/taskManagementView?id=${item.id}` })
 
       break

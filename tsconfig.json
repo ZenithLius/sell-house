@@ -12,6 +12,7 @@
       "@dcloudio/types",
       "miniprogram-api-typings",
       "@uni-helper/uni-app-types",
+      "uni-modules/uview-plus/types",
       "@uni-helper/uni-ui-types"
     ]
   },

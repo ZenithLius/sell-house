@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import type { CategoryItem } from '@/types/home'
+import { useMemberStore } from '@/stores'
 
-// 定义 props 接收数据
+const memberStore = useMemberStore()
+
 defineProps<{
   list: CategoryItem[]
 }>()
+
+const emit = defineEmits(['login'])
+
+const handleClick = (item: CategoryItem) => {
+  if (!memberStore.profile && item.id !== '3') {
+    emit('login')
+    return
+  }
+  uni.switchTab({ url: item.url })
+}
 </script>
 
 <template>
@@ -12,7 +24,7 @@ defineProps<{
     <navigator
       class="category-item"
       hover-class="none"
-      url="/pages/index/index"
+      @click="handleClick(item)"
       v-for="item in list"
       :key="item.id"
     >

@@ -14,6 +14,8 @@
       <image class="logo-image" src="@/static/house/logo.png"></image>
     </view>
 
+    <ShMainTabbar />
+
     <view class="back" :style="{ top: safeAreaInsets!.top +10 + 'px' }">
       <image
         class="back-icon"
@@ -24,24 +26,73 @@
     </view>
     <view class="scroll-view">
       <view class="scroll-content">
-        <ShCustomForm v-model="formData" :fields="fields" :has-bottom-tabbar="true" />
+        <ShCustomForm :key="key" v-model="formData" :fields="fields" :has-bottom-tabbar="true" />
         <view class="footer" @click="handleSubmit">
           <view class="submit-btn">提交</view>
         </view>
         <view class="space" style="height: 50rpx"></view>
       </view>
     </view>
-
-    <!-- 自定义 TabBar -->
-    <ShMainTabbar />
   </scroll-view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import ShCustomForm from '@/components/ShCustomForm.vue'
 import type { CustomFormField } from '@/types/customFormField'
+import { onLoad, onUnload, onShow } from '@dcloudio/uni-app'
 
+import { getAreaListAPI, sellHouseAPI, type SellHouseParams } from '@/services/house'
+
+const getAreaListData = async () => {
+  const res = await getAreaListAPI()
+  fields.value[3].options = res.data
+}
+
+onShow(() => {
+  resetForm()
+})
+
+onUnload(() => {
+  formData.value = {
+    id: '',
+    title: '',
+    area: '',
+    price: '',
+    district_code: '',
+    street_name: '',
+    username: '',
+    phone: '',
+    province_code: '',
+    province_name: '',
+    city_code: '',
+    city_name: '',
+    district_name: '',
+    street_code: '',
+    address: '',
+  }
+})
+const key = ref(0)
+const sellHouseReq = async (data: SellHouseParams) => {
+  uni.showLoading({
+    title: '提交中...',
+  })
+  const res = await sellHouseAPI(data)
+  if (res.code == 200) {
+    uni.showToast({
+      title: '提交成功',
+      icon: 'none',
+    })
+    resetForm()
+    nextTick(() => {
+      uni.switchTab({ url: '/pages/index/index' })
+    })
+  }
+  uni.hideLoading()
+}
+onLoad(() => {
+  getAreaListData()
+})
 const showNavbar = ref(false)
 
 const back = () => {
@@ -64,41 +115,48 @@ const handleBack = () => {
   uni.switchTab({ url: '/pages/index/index' })
 }
 const handleSubmit = () => {
-  console.log('1tijao1', formData.value)
+  if (formData.value.username == '') {
+    uni.showToast({
+      title: '请填写姓名',
+      icon: 'none',
+    })
+    return
+  }
+  if (formData.value.phone == '') {
+    uni.showToast({
+      title: '请填写电话',
+      icon: 'none',
+    })
+    return
+  }
+  if (formData.value.phone && !/^1[3-9]\d{9}$/.test(formData.value.phone)) {
+    uni.showToast({
+      title: '请输入正确的手机号码',
+      icon: 'none',
+    })
+    return
+  }
+  formData.value.district_code = formData.value.district_code + ''
+  sellHouseReq(formData.value as SellHouseParams)
 }
-const fields: CustomFormField[] = [
-  { key: 'communityName', label: '小区名称', type: 'input', placeholder: '请输入小区名称' },
+const fields = ref<any[]>([
+  { key: 'title', label: '小区名称', type: 'input', placeholder: '请输入小区名称' },
   { key: 'area', label: '面积', type: 'input', placeholder: '请输入', unit: '/m²' },
   { key: 'price', label: '价格', type: 'input', placeholder: '请输入', unit: '/万元' },
   {
-    key: 'region',
+    key: 'district_code',
     label: '区域',
     type: 'select',
     placeholder: '请选择所在区域',
-    options: [
-      { label: '新城区', value: '1' },
-      { label: '碑林区', value: '2' },
-      { label: '莲湖区', value: '3' },
-      { label: '灞桥区', value: '4' },
-      { label: '未央区', value: '5' },
-      { label: '雁塔区', value: '6' },
-      { label: '阎良区', value: '7' },
-      { label: '临潼区', value: '8' },
-      { label: '长安区', value: '9' },
-      { label: '高陵区', value: '10' },
-      { label: '鄠邑区', value: '11' },
-      { label: '蓝田县', value: '12' },
-      { label: '周至县', value: '13' },
-      { label: '西安高新技术产业开发区', value: '14' },
-    ],
+    options: [],
   },
   {
-    key: 'address',
+    key: 'street_name',
     label: '详细地址',
     type: 'input',
     placeholder: '请输入详细地址',
   },
-  { key: 'customerName', label: '姓名', type: 'input', placeholder: '请输入姓名', required: true },
+  { key: 'username', label: '姓名', type: 'input', placeholder: '请输入姓名', required: true },
   {
     key: 'phone',
     label: '电话',
@@ -107,17 +165,34 @@ const fields: CustomFormField[] = [
     inputType: 'number',
     required: true,
   },
-]
+])
 
-const formData = ref({
-  communityName: '',
+// 定义初始数据
+const getInitialFormData = () => ({
+  id: '',
+  title: '',
   area: '',
   price: '',
-  region: '',
-  address: '',
-  customerName: '',
+  district_code: '',
+  street_name: '',
+  username: '',
   phone: '',
+  province_code: '',
+  province_name: '',
+  city_code: '',
+  city_name: '',
+  district_name: '',
+  street_code: '',
+  address: '',
 })
+
+const formData = ref(getInitialFormData())
+
+// 重置表单的函数
+const resetForm = () => {
+  key.value++
+  Object.assign(formData.value, getInitialFormData())
+}
 </script>
 
 <style lang="scss">

@@ -1,7 +1,7 @@
 /** 过滤器选项 */
 export interface FilterOption {
-  label: string
-  value: string | number
+  title: string
+  id: string | number
 }
 
 /** 分组筛选配置 */

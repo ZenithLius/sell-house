@@ -6,21 +6,25 @@ const handleAudit = (item: DealRecordItem) => {
 }
 
 interface DealRecordItem {
-  id: string | number
-  time: string
-  broker: string // 成交经纪人
-  dealPrice: string // 成交价格
-  agencyFee: string // 出房中介费
-  dealBonus: string // 出房成交奖
-  auditStatus: string // 审核状态
-  auditTime?: string // 审核时间
-  failReason?: string // 失败原因
-  contractImages: string[] // 成交合同图片
+  agency_fee: string
+  agent_id: number
+  agent_name: string
+  award: string
+  create_time: string
+  created_at: string
+  examine_at: null
+  examine_time: string
+  mul_img: string[]
+  remark: string | null
+  status: string
+  total_price: string
+  transaction_status_id: number
+  transaction_status_name: string
 }
 
 const props = defineProps({
   list: {
-    type: Array as () => DealRecordItem[],
+    type: Array as () => any[],
     default: () => [],
   },
   loading: {
@@ -36,25 +40,9 @@ const props = defineProps({
 const currentRole = uni.getStorageSync('currentOtherManageType')
 
 const emit = defineEmits<{
-  loadMore: []
   itemClick: [item: DealRecordItem]
   audit: [item: DealRecordItem]
 }>()
-
-const scrollTop = ref(0)
-const isLoadingMore = ref(false)
-
-// 触底加载
-const handleScrollToLower = () => {
-  if (isLoadingMore.value || !props.hasMore || props.loading) {
-    return
-  }
-  isLoadingMore.value = true
-  emit('loadMore')
-  setTimeout(() => {
-    isLoadingMore.value = false
-  }, 500)
-}
 
 // 点击记录项
 const handleItemClick = (item: DealRecordItem) => {
@@ -70,30 +58,37 @@ const previewImage = (images: string[], currentUrl: string) => {
 }
 
 // 判断审核状态是否失败
-const isAuditFailed = (status: string) => {
-  return status.includes('失败')
+const isAuditFailed = (status: number) => {
+  return status == 2
 }
 
 // 判断审核状态是否成功
-const isAuditSuccess = (status: string) => {
-  return status.includes('成功')
+const isAuditSuccess = (status: number) => {
+  return status == 1
+}
+
+const getAuditStatus = (status: number) => {
+  switch (status) {
+    case 0:
+      return '审核中'
+    case 1:
+      return '审核通过'
+    case 2:
+      return '审核失败'
+    default:
+      return ''
+  }
 }
 </script>
 
 <template>
-  <scroll-view
-    class="deal-record-list"
-    :class="{ 'has-bottom-btn': currentRole === 'manager' }"
-    scroll-y
-    :scroll-top="scrollTop"
-    @scrolltolower="handleScrollToLower"
-  >
+  <view class="deal-record-list" :class="{ 'has-bottom-btn': currentRole === 'manager' }">
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="record-item">
+      <view v-for="item in list" :key="item.agent_id" class="record-item">
         <!-- 标题和时间 -->
         <view class="record-header">
-          <text class="record-title">成交状态</text>
-          <text class="record-time">{{ item.time }}</text>
+          <text class="record-title">{{ item.transaction_status_name }}</text>
+          <text class="record-time">{{ item.create_time }}</text>
         </view>
 
         <!-- 详情信息 -->
@@ -101,25 +96,25 @@ const isAuditSuccess = (status: string) => {
           <!-- 成交经纪人 -->
           <view class="info-row">
             <text class="info-label">成交经纪人</text>
-            <text class="info-value">{{ item.broker }}</text>
+            <text class="info-value">{{ item.agent_name }}</text>
           </view>
 
           <!-- 成交价格 -->
           <view class="info-row">
             <text class="info-label">成交价格</text>
-            <text class="info-value">{{ item.dealPrice }}</text>
+            <text class="info-value">￥{{ item.total_price }}元</text>
           </view>
 
           <!-- 出房中介费 -->
           <view class="info-row">
             <text class="info-label">出房中介费</text>
-            <text class="info-value">{{ item.agencyFee }}</text>
+            <text class="info-value">￥{{ item.agency_fee }}元</text>
           </view>
 
           <!-- 出房成交奖 -->
           <view class="info-row">
             <text class="info-label">出房成交奖</text>
-            <text class="info-value">{{ item.dealBonus }}</text>
+            <text class="info-value">￥{{ item.award }}元</text>
           </view>
 
           <!-- 审核状态 -->
@@ -128,51 +123,48 @@ const isAuditSuccess = (status: string) => {
             <text
               class="info-value"
               :class="{
-                'status-failed': isAuditFailed(item.auditStatus),
-                'status-success': isAuditSuccess(item.auditStatus),
+                'status-pending': item.status === 0,
+                'status-failed': isAuditFailed(item.status),
+                'status-success': isAuditSuccess(item.status),
               }"
             >
-              {{ item.auditStatus }}
-              <text v-if="item.auditTime" class="audit-time">（{{ item.auditTime }}）</text>
+              {{ getAuditStatus(item.status) }}
+              <text v-if="item.examine_time && item.status !== 0" class="audit-time"
+                >（{{ item.examine_time }}）</text
+              >
             </text>
           </view>
 
           <!-- 失败原因 -->
-          <view v-if="item.failReason" class="info-row">
+          <view v-if="item.remark" class="info-row">
             <text class="info-label">失败原因</text>
-            <text class="info-value">{{ item.failReason }}</text>
+            <text class="info-value">{{ item.remark }}</text>
           </view>
 
           <!-- 成交合同 -->
-          <view
-            v-if="item.contractImages && item.contractImages.length > 0"
-            class="contract-section"
-          >
+          <view v-if="item.mul_img && item.mul_img.length > 0" class="contract-section">
             <text class="contract-label">成交合同</text>
             <view class="contract-images">
               <image
-                v-for="(img, imgIndex) in item.contractImages"
+                v-for="(img, imgIndex) in item.mul_img"
                 :key="imgIndex"
                 class="contract-image"
                 :src="img"
                 mode="aspectFill"
-                @click="previewImage(item.contractImages, img)"
+                @click="previewImage(item.mul_img, img)"
               />
             </view>
           </view>
 
           <!-- 待审核的显示审核按钮 -->
-          <view
-            v-if="item.auditStatus === '待审核' && currentRole === 'manager'"
-            class="action-section"
-          >
+          <view v-if="item.status === '0' && currentRole === 'manager'" class="action-section">
             <view class="action-btn" @tap="handleAudit(item)">成交审核</view>
           </view>
         </view>
       </view>
 
       <!-- 加载状态 -->
-      <view v-if="loading || isLoadingMore" class="loading-wrapper">
+      <view v-if="loading" class="loading-wrapper">
         <text class="loading-text">加载中...</text>
       </view>
 
@@ -186,18 +178,14 @@ const isAuditSuccess = (status: string) => {
         <text class="empty-text">暂无成交记录</text>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <style lang="scss" scoped>
 .deal-record-list {
   flex: 1;
   width: 100%;
-  height: calc(100vh - env(safe-area-inset-bottom) - 400rpx);
   background: #fff;
-}
-.has-bottom-btn {
-  height: calc(100vh - env(safe-area-inset-bottom) - 260rpx);
 }
 .action-btn {
   width: 236rpx;
@@ -262,6 +250,7 @@ const isAuditSuccess = (status: string) => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 28rpx;
+  align-items: center;
 
   &:last-child {
     margin-bottom: 0;
@@ -285,6 +274,10 @@ const isAuditSuccess = (status: string) => {
   flex: 1;
   margin-left: 20rpx;
   text-align: start;
+}
+
+.status-pending {
+  color: #3399ffff;
 }
 
 .status-failed {

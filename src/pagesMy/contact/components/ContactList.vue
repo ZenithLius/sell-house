@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
-interface ContactItem {
-  id: string | number
-  title: string
-  time: string // 服务时间
-  phone: string // 电话号码
-}
+import type { ContactItem as APIContactItem } from '@/pagesMy/services/contact'
 
 const props = defineProps({
   list: {
-    type: Array as () => ContactItem[],
+    type: Array as () => APIContactItem[],
     default: () => [],
   },
   loading: {
@@ -57,7 +51,7 @@ const handleMakeCall = (phone: string) => {
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="contact-item">
+      <view v-for="item in list" :key="item.contact" class="contact-item">
         <!-- 左侧图标 -->
         <view class="icon-wrapper">
           <image class="phone-icon" src="@/pagesMy/static/contactPhone.png" mode="aspectFit" />
@@ -65,7 +59,7 @@ const handleMakeCall = (phone: string) => {
 
         <!-- 中间内容 -->
         <view class="item-content">
-          <text class="item-title">{{ item.title }} ({{ item.time }})</text>
+          <text class="item-title">{{ item.name }} ({{ item.contact }})</text>
           <text class="item-phone">{{ item.phone }}</text>
         </view>
 

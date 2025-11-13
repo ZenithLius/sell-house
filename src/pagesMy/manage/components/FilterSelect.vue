@@ -33,11 +33,11 @@
                   :key="idx"
                   class="option-item"
                   :class="{
-                    selected: tempGroupSelected[getGroupKey(group, gIdx)] === option.value,
+                    selected: tempGroupSelected[getGroupKey(group, gIdx)] === option.id,
                   }"
-                  @tap="handleSelectGroupOption(getGroupKey(group, gIdx), option.value)"
+                  @tap="handleSelectGroupOption(getGroupKey(group, gIdx), option.id)"
                 >
-                  <text class="option-text">{{ option.label }}</text>
+                  <text class="option-text">{{ option.title }}</text>
                 </view>
               </view>
             </view>
@@ -47,10 +47,10 @@
               v-for="(option, idx) in currentOptions"
               :key="idx"
               class="option-item"
-              :class="{ selected: tempSelectedValue === option.value }"
-              @tap="handleSelectOption(option.value)"
+              :class="{ selected: tempSelectedValue === option.id }"
+              @tap="handleSelectOption(option.id)"
             >
-              <text class="option-text">{{ option.label }}</text>
+              <text class="option-text">{{ option.title }}</text>
             </view>
           </template>
         </scroll-view>
@@ -126,8 +126,8 @@ const getFilterLabel = (filter: FilterConfig, index: number) => {
     selectedValue !== undefined &&
     (typeof selectedValue === 'string' || typeof selectedValue === 'number')
   ) {
-    const option = filter.options.find((opt) => opt.value === selectedValue)
-    return option ? option.label : filter.label
+    const option = filter.options.find((opt) => opt.id === selectedValue)
+    return option ? option.title : filter.label
   }
   return filter.label
 }
@@ -294,7 +294,6 @@ const handleConfirm = () => {
       }
     }
   })
-
   activeFilters.value = newFilters
   emit('update:modelValue', activeFilters.value)
 
@@ -303,13 +302,13 @@ const handleConfirm = () => {
 
   handleClosePopup()
 }
+
+defineExpose({
+  close: handleClosePopup,
+})
 </script>
 
 <style lang="scss" scoped>
-.options-scroll {
-  min-height: 200rpx;
-  max-height: 400rpx;
-}
 .drawer-footer {
   display: flex;
   background-color: none;

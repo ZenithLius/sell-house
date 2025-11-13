@@ -19,12 +19,18 @@
         {{ tab.text }}
       </text>
     </view>
+
+    <ShLoginPopup ref="loginPopup" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import ShLoginPopup from '@/components/ShLoginPopup.vue'
+import { useMemberStore } from '@/stores'
+
+const loginPopup = ref<InstanceType<typeof ShLoginPopup> | null>(null)
 
 interface TabItem {
   text: string
@@ -94,18 +100,23 @@ const handleTabClick = (pagePath: string) => {
   if (currentPath.value === pagePath) {
     return
   }
+  if (pagePath === 'pages/customers/index' || pagePath === 'pages/house/index') {
+    const memberStore = useMemberStore()
+    if (!memberStore.profile) {
+      loginPopup.value?.open()
+      return
+    }
+  }
 
   uni.switchTab({
     url: `/${pagePath}`,
   })
 }
 
-// 页面显示时更新当前路径
 onShow(() => {
   updateCurrentPath()
 })
 
-// 初始化
 updateCurrentPath()
 </script>
 

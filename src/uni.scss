@@ -13,7 +13,7 @@
  */
 
 /* 颜色变量 */
-
+@import '@/uni_modules/uview-plus/theme.scss';
 /* 行为相关颜色 */
 $uni-color-primary: #863fce;
 $uni-color-success: #4cd964;
@@ -69,6 +69,8 @@ $uni-opacity-disabled: 0.3; // 组件禁用态的透明度
 
 /* 底部安全区域 */
 $uni-safe-area-bottom: calc(env(safe-area-inset-bottom) + 300rpx);
+/* 阴影 */
+$uni-box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
 
 /* 文章场景相关 */
 $uni-color-title: #2c405a; // 文章标题颜色

@@ -15,6 +15,8 @@
         v-if="currentRole !== 'manager' && currentRole !== 'renovation'"
         v-model="formData"
         :fields="fields"
+        @fieldChangeSearch="handleFieldChangeSearch"
+        @fieldChange="handleFieldChange"
       />
 
       <ShFormView v-else :modelValue="formData" :fields="fields2" :showAsteriskForRequired="true" />
@@ -33,7 +35,7 @@
       <view class="space"></view>
     </view>
 
-    <BottomTabbar v-if="currentRole !== 'renovation'" />
+    <!-- <BottomTabbar v-if="currentRole !== 'renovation'" /> -->
   </view>
 </template>
 
@@ -46,12 +48,100 @@ import type { CollapseItem } from './components/CollapsePanel.vue'
 import AuditProgress from './components/AuditProgress.vue'
 import type { AuditInfo } from './components/AuditProgress.vue'
 import { ref } from 'vue'
+import {
+  assignProjectManagerAPI,
+  decorationRecordListAPI,
+  investorListAPI,
+} from '../services/staff'
+import { onLoad } from '@dcloudio/uni-app'
 
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+/**
+ * ==================================获取表单装修负责人数据========================================
+ */
+const fields = ref<any[]>([
+  {
+    key: 'user_id',
+    label: '',
+    type: 'selectSearch',
+    head: '装修负责人：',
+    placeholder: '',
+    options: [],
+    required: false,
+  },
+])
+const fields2: CustomFormField[] = [
+  {
+    key: 'communityName',
+    label: 'none',
+    type: 'input',
+    head: '装修负责人：',
+  },
+]
+const keyWord = ref('')
+// 设置装修负责人
+const handleFieldChange = (key: string, value: any) => {
+  userId.value = value
+  // getDecorationRecordListReq()
+  setAssignProjectManagerReq()
+}
+const setAssignProjectManagerReq = async () => {
+  const params = {
+    house_list_id: currentHouseListId.value,
+    project_manager_user_id: userId.value,
+  }
+  const res = await assignProjectManagerAPI(params)
+}
+const handleFieldChangeSearch = (value: any) => {
+  keyWord.value = value
+  getInvestorListReq()
+}
+
+const getInvestorListReq = async () => {
+  const params = {
+    keyword: keyWord.value,
+    type: 3,
+    // 1投资人，2经纪人，3装修负责人
+  }
+  const res = await investorListAPI(params)
+
+  const target = fields.value.find((f) => f.key === 'user_id')
+
+  if (target) {
+    target.options = res.data.list
+  }
+}
+
+/**
+ * ==================================装修记录========================================
+ */
+
+const getDecorationRecordListReq = async () => {
+  const params = {
+    house_list_id: currentHouseListId.value,
+    user_id: userId.value,
+  }
+  const res = await decorationRecordListAPI(params)
+}
 const handleAddRecord = () => {
   uni.navigateTo({
     url: '/pagesRenovation/addRecord',
   })
 }
+const currentHouseListId = ref<string | number>('')
+const userId = ref<string | number>('')
+onLoad((options) => {
+  currentHouseListId.value = options?.house_list_id || ''
+  userId.value = options?.user_id || ''
+
+  getDecorationRecordListReq()
+  getInvestorListReq()
+})
 
 const bottomButtons = [
   {
@@ -77,31 +167,6 @@ const handleBack = () => {
 const formData = ref({
   communityName: 'liming',
 })
-
-const fields: CustomFormField[] = [
-  {
-    key: 'communityName',
-    label: '',
-    type: 'selectSearch',
-    head: '装修负责人：',
-    placeholder: '',
-    options: [
-      { label: '负责人1', value: '1', phone: '12345678901' },
-      { label: '负责人2', value: '2', phone: '12345678902' },
-      { label: '负责人3', value: '3', phone: '12345678903' },
-      { label: '负责人4', value: '4', phone: '12345678904' },
-    ],
-    required: false,
-  },
-]
-const fields2: CustomFormField[] = [
-  {
-    key: 'communityName',
-    label: 'none',
-    type: 'input',
-    head: '装修负责人：',
-  },
-]
 
 // 审核进度数据
 const completionAuditData = ref<AuditInfo>({

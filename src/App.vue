@@ -13,8 +13,10 @@ onHide(() => {
 </script>
 
 <style lang="scss">
+@import '@/uni_modules/uview-plus/index.scss';
 @import '@/styles/fonts.scss';
 @import '@/styles/base.scss';
+@import '@/uni.scss';
 
 page {
   --safe-area-bottom-padding: calc(env(safe-area-inset-bottom) + 350rpx);

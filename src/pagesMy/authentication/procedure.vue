@@ -10,9 +10,11 @@
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }">
       <ProcedureList
         :list="procedureList"
-        :loading="loading"
+        :loading="isLoading"
         :hasMore="hasMore"
-        @loadMore="loadMore"
+        :isTriggered="isTriggered"
+        @refresh="onRefresherrefresh"
+        @loadMore="handleScrollToLower"
         @itemClick="handleItemClick"
       />
     </view>
@@ -31,15 +33,61 @@
 import { ref } from 'vue'
 import ProcedureList from './components/ProcedureList.vue'
 import BottomTabbar from './components/BottomTabbar.vue'
+import { procedureListAPI, type ProcedureItem } from '../services/staff'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { useScrollRefresh } from '@/composables/testUseScroller'
+const { safeAreaInsets } = uni.getSystemInfoSync()
 
 const currentRole = uni.getStorageSync('currentOtherManageType')
 
-interface ProcedureItem {
-  id: string | number
-  status: string
-  time: string
-  remark: string
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+const houseListId = ref<string | number>('')
+
+onLoad((options) => {
+  houseListId.value = options?.house_list_id || ''
+})
+
+const fetchData = async (page: number) => {
+  uni.showLoading({
+    title: '加载中',
+  })
+  const res = await procedureListAPI(houseListId.value, page, 10)
+  uni.hideLoading()
+  if (res.code !== 200) {
+    uni.showToast({
+      title: res.msg,
+      icon: 'none',
+    })
+    return []
+  }
+  return res.data.list
 }
+/**
+ * ==========================================================================
+ */
+
+const {
+  list: procedureList,
+  isLoading,
+  hasMore,
+  isTriggered,
+  onRefresherrefresh,
+  handleScrollToLower,
+  refresh,
+} = useScrollRefresh<ProcedureItem>({
+  fetchData,
+  pageSize: 10,
+  immediate: false,
+})
+
+onShow(() => {
+  refresh()
+})
 
 const bottomButtons = [
   {
@@ -52,114 +100,17 @@ const bottomButtons = [
 const handleButtonClick = (index: number) => {
   if (index === 0) {
     uni.navigateTo({
-      url: '/pagesMy/authentication/addProcedure',
+      url: `/pagesMy/authentication/addProcedure?house_list_id=${houseListId.value}`,
     })
   }
 }
-
-const { safeAreaInsets } = uni.getSystemInfoSync()
-
-const procedureList = ref<ProcedureItem[]>([
-  {
-    id: 1,
-    status: '完结',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 2,
-    status: '放款',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-
-  {
-    id: 3,
-    status: '过户',
-    time: '2025.09.01 10:00:00',
-    remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-  },
-])
-
-const loading = ref(false)
-const hasMore = ref(true)
-const currentPage = ref(1)
 
 const handleBack = () => {
   uni.navigateBack()
 }
 
-// 加载更多
-const loadMore = () => {
-  if (loading.value || !hasMore.value) {
-    return
-  }
-
-  loading.value = true
-
-  // 模拟API请求
-  setTimeout(() => {
-    const newData: ProcedureItem[] = [
-      {
-        id: procedureList.value.length + 1,
-        status: '审核中',
-        time: '2025.09.02 14:20:00',
-        remark: '备注文字介绍备注文字介绍备注文字介绍备注文字介绍',
-      },
-    ]
-
-    procedureList.value.push(...newData)
-    currentPage.value++
-
-    // 模拟没有更多数据
-    if (currentPage.value >= 4) {
-      hasMore.value = false
-    }
-
-    loading.value = false
-  }, 1000)
-}
-
-// 点击记录项
-const handleItemClick = (item: ProcedureItem) => {
-  console.log('点击了手续项:', item)
-  // TODO: 可以在这里跳转到详情页等
+const handleItemClick = (item: any) => {
+  console.log('点击了手续项=======', item)
 }
 </script>
 

@@ -22,46 +22,59 @@
     <!-- 用户信息卡片 -->
     <view class="user-info-card" :style="{ marginTop: safeAreaInsets!.top + 60 + 'px' }">
       <!-- 编辑按钮 -->
-      <view class="edit-btn" @tap="handleEdit">
-        <image class="edit-icon" src="/static/my/edit.png"></image>
-        <text class="edit-text">编辑</text>
+
+      <view v-if="userInfo" class="logined">
+        <view class="edit-btn" @tap="handleEdit">
+          <image class="edit-icon" src="/static/my/edit.png"></image>
+          <text class="edit-text">编辑</text>
+        </view>
+        <!-- 头像 -->
+        <view class="avatar-wrapper">
+          <image class="avatar" :src="userInfo?.avatar"></image>
+        </view>
+
+        <!-- 用户信息 -->
+        <view class="user-details">
+          <!-- 第一行：姓名和角色 -->
+          <view class="name-row">
+            <text class="user-name">{{ userInfo?.nickname }}</text>
+            <text class="role-tag">{{ userInfo?.role1 }}</text>
+            <text class="role-tag">{{ userInfo?.role2 }}</text>
+          </view>
+
+          <!-- 第二行：手机号 -->
+          <view class="phone-row">
+            <image class="phone-icon" src="@/static/customers/phone.png"></image>
+            <text class="phone-number">{{ userInfo?.mobile }}</text>
+          </view>
+
+          <view class="company-row">
+            <text class="company-text">所属公司：{{ userInfo?.company_tile }}</text>
+          </view>
+        </view>
       </view>
 
-      <!-- 头像 -->
-      <view class="avatar-wrapper">
-        <image class="avatar" src="@/pagesMy/static/edit.png"></image>
-      </view>
-
-      <!-- 用户信息 -->
-      <view class="user-details">
-        <!-- 第一行：姓名和角色 -->
-        <view class="name-row">
-          <text class="user-name">{{ userInfo.name }}</text>
-          <text class="role-tag">{{ userInfo.role1 }}</text>
-          <text class="role-tag">{{ userInfo.role2 }}</text>
-        </view>
-
-        <!-- 第二行：手机号 -->
-        <view class="phone-row">
-          <image class="phone-icon" src="@/static/customers/phone.png"></image>
-          <text class="phone-number">{{ userInfo.phone }}</text>
-        </view>
-
-        <view class="company-row">
-          <text class="company-text">{{ userInfo.company }}</text>
-        </view>
+      <view
+        v-else
+        @tap="handleLogin"
+        class="not-logined"
+        :style="{ marginTop: safeAreaInsets!.top + 0 + 'px' }"
+      >
+        去登录
       </view>
     </view>
 
     <view class="menu-list-wrapper">
-      <MenuList />
+      <MenuList @login="handleLogin" />
     </view>
 
     <!-- 其他管理 -->
-    <OtherManage />
+    <OtherManage @login="handleLogin" />
 
     <!-- 联系我们和关于我们 -->
     <ContactAbout />
+
+    <view class="space"></view>
   </scroll-view>
 
   <uni-popup ref="share" type="share" backgroundColor="#fff">
@@ -69,40 +82,31 @@
   </uni-popup>
 
   <!-- 登录弹窗 -->
-  <LoginPopup ref="loginPopup" />
+  <ShLoginPopup ref="loginPopup" />
 
-  <!-- 自定义 TabBar -->
   <ShMainTabbar />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import type { BannerItem } from '@/types/home'
+import { ref, computed } from 'vue'
 import MenuList from './components/MenuList.vue'
 import OtherManage from './components/OtherManage.vue'
 import ContactAbout from './components/ContactAbout.vue'
-import LoginPopup from './components/LoginPopup.vue'
-
+import { useUserStore } from '@/stores'
 const showNavbar = ref(false)
 
-// 用户信息
-const userInfo = ref({
-  name: '王姓名',
-  role1: '经理',
-  role2: '经纪人',
-  phone: '13212345678',
-  company: '所属公司：西安福地领先卖房科技有限公司',
-})
-
-const back = () => {
-  uni.navigateBack()
+const handleLogin = () => {
+  loginPopup.value?.open()
 }
+
+// 用户信息
+const userInfo = computed(() => useUserStore().userInfo)
 const share = ref<any>(null)
 const loginPopup = ref<any>(null)
 const handleEdit = () => {
-  console.log('编辑用户信息')
-  loginPopup.value?.open()
+  uni.navigateTo({
+    url: '/pagesCustomer/editInfo',
+  })
 }
 
 const onScroll = (e: any) => {
@@ -117,76 +121,11 @@ const onScroll = (e: any) => {
   scrollTop.value = currentScrollTopHeight
 }
 const scrollTop = ref(0)
-type CustomFormField = {
-  key: string
-  label: string
-  type?: 'input' | 'textarea' | 'select'
-  placeholder?: string
-  inputType?: 'text' | 'number' | 'idcard' | 'digit'
-  password?: boolean
-  unit?: string
-  required?: boolean
-  options?: { label: string; value: any }[]
-}
+
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const handleBack = () => {
   uni.switchTab({ url: '/pages/index/index' })
 }
-const handleSubmit = () => {
-  console.log('1tijao1', formData.value)
-}
-const fields: CustomFormField[] = [
-  { key: 'communityName', label: '小区名称', type: 'input', placeholder: '请输入小区名称' },
-  { key: 'area', label: '面积', type: 'input', placeholder: '请输入', unit: '/m²' },
-  { key: 'price', label: '价格', type: 'input', placeholder: '请输入', unit: '/万元' },
-  {
-    key: 'region',
-    label: '区域',
-    type: 'select',
-    placeholder: '请选择所在区域',
-    options: [
-      { label: '新城区', value: '1' },
-      { label: '碑林区', value: '2' },
-      { label: '莲湖区', value: '3' },
-      { label: '灞桥区', value: '4' },
-      { label: '未央区', value: '5' },
-      { label: '雁塔区', value: '6' },
-      { label: '阎良区', value: '7' },
-      { label: '临潼区', value: '8' },
-      { label: '长安区', value: '9' },
-      { label: '高陵区', value: '10' },
-      { label: '鄠邑区', value: '11' },
-      { label: '蓝田县', value: '12' },
-      { label: '周至县', value: '13' },
-      { label: '西安高新技术产业开发区', value: '14' },
-    ],
-  },
-  {
-    key: 'address',
-    label: '详细地址',
-    type: 'input',
-    placeholder: '请输入详细地址',
-  },
-  { key: 'customerName', label: '姓名', type: 'input', placeholder: '请输入姓名', required: true },
-  {
-    key: 'phone',
-    label: '电话',
-    type: 'input',
-    placeholder: '请输入电话',
-    inputType: 'number',
-    required: true,
-  },
-]
-
-const formData = ref({
-  communityName: '',
-  area: '',
-  price: '',
-  region: '',
-  address: '',
-  customerName: '',
-  phone: '',
-})
 </script>
 
 <style lang="scss">
@@ -198,10 +137,27 @@ const formData = ref({
   z-index: 100;
   animation: slideDown 0.3s ease-out;
 }
+.not-logined {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 400;
+  font-size: 28rpx;
+  color: #666666;
+  border: 1px solid #cacaca;
+  background: rgba(255, 255, 255, 0.34);
+  border-radius: 47rpx;
+  width: 470rpx;
+  height: 94rpx;
+  margin: 0 auto;
+}
+.space {
+  height: calc(env(safe-area-inset-bottom) + 30rpx);
+}
 
 .viewport {
   height: 100vh;
-  background-color: #eff0ed;
+  background-color: #ffffff;
   padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
   .bg-image {
     width: 100%;

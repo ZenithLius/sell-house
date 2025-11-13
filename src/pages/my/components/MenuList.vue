@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-
+import { useMemberStore } from '@/stores'
+const memberStore = useMemberStore()
 type MenuItem = {
   title: string
   icon: string
@@ -59,7 +60,12 @@ const menuItems = ref<MenuItem[]>([
   },
 ])
 
+const emit = defineEmits(['login'])
 const handleMenuClick = (item: MenuItem) => {
+  if (!memberStore.profile) {
+    emit('login')
+    return
+  }
   if (item.path) {
     uni.navigateTo({ url: item.path })
   }
@@ -67,12 +73,13 @@ const handleMenuClick = (item: MenuItem) => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/uni.scss';
 .menu-list {
   background: #ffffff;
   border-radius: 20rpx;
   padding: 38rpx 32rpx 32rpx 38rpx;
   margin: 0 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: $uni-box-shadow;
 
   .menu-item {
     display: flex;

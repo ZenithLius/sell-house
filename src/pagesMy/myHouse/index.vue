@@ -12,8 +12,10 @@
         :list="houseList"
         :loading="loading"
         :hasMore="hasMore"
+        :refreshing="refreshing"
         @loadMore="loadMoreHouses"
         @itemClick="handleItemClick"
+        @refresh="onRefresh"
       />
     </view>
   </view>
@@ -22,21 +24,28 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import MyHouseList from './components/MyHouseList.vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getMySellHouseAPI, type HouseItem as ApiHouseItem } from '@/pagesMy/services'
 
+// 适配后的房源项类型
 interface HouseItem {
-  id: string | number
   title: string
-  price: string
   area: string
-  size: string
+  created_at: string
+  province_name: string
+  city_name: string
+  district_name: string
+  street_name: string
   address: string
-  date: string
+  price: string
+  add_time: string
 }
 
 const houseList = ref<HouseItem[]>([])
 const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
+const refreshing = ref(false)
 
 // 加载房源列表
 const loadHouses = async () => {
@@ -44,70 +53,29 @@ const loadHouses = async () => {
 
   loading.value = true
   try {
-    // const res = await uni.request({
-    //   url: '/api/myHouse/list',
-    //   data: { page: page.value, pageSize: 10 }
-    // })
+    const res = await getMySellHouseAPI({
+      page: page.value,
+      per_page: 10,
+    })
+    console.log('我的卖房接口返回数据', res)
 
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: HouseItem[] = [
-      {
-        id: 1,
-        title: '天朗御湖',
-        price: '150万元',
-        area: '新城区',
-        size: '150㎡',
-        address: '新城区XXXXXXXXXXXXXXXXXX',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 2,
-        title: '天朗御湖',
-        price: '150万元',
-        area: '新城区',
-        size: '150㎡',
-        address: '新城区XXXXXXXXXXXXXXXXXX',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 3,
-        title: '天朗御湖',
-        price: '150万元',
-        area: '新城区',
-        size: '150㎡',
-        address: '新城区XXXXXXXXXXXXXXXXXX',
-        date: '2025.09.02 10:00:00',
-      },
-      {
-        id: 4,
-        title: '绿地世纪城',
-        price: '200万元',
-        area: '雁塔区',
-        size: '180㎡',
-        address: '雁塔区YYYYYYYYYYYYYYYYYY',
-        date: '2025.09.03 14:30:00',
-      },
-      {
-        id: 5,
-        title: '万科金域华府',
-        price: '180万元',
-        area: '高新区',
-        size: '160㎡',
-        address: '高新区ZZZZZZZZZZZZZZZZ',
-        date: '2025.09.04 16:00:00',
-      },
-    ]
+    if (res.code === 200 && res.data) {
+      const { list: houseData, current_page, per_page } = res.data
 
-    if (page.value === 1) {
-      houseList.value = mockData
+      if (page.value === 1) {
+        houseList.value = houseData
+        console.log('homelist===================', houseList.value)
+      } else {
+        houseList.value.push(...houseData)
+      }
+
+      hasMore.value = houseData.length >= per_page
+      page.value = current_page
     } else {
-      houseList.value.push(...mockData)
-    }
-
-    // 模拟没有更多数据
-    if (page.value >= 2) {
-      hasMore.value = false
+      uni.showToast({
+        title: res.msg || '加载失败',
+        icon: 'none',
+      })
     }
   } catch (error) {
     console.error('加载房源列表失败:', error)
@@ -126,10 +94,17 @@ const loadMoreHouses = () => {
   loadHouses()
 }
 
+// 下拉刷新
+const onRefresh = async () => {
+  refreshing.value = true
+  page.value = 1
+  await loadHouses()
+  refreshing.value = false
+}
+
 // 点击房源项
 const handleItemClick = (item: HouseItem) => {
   console.log('点击房源:', item)
-  // TODO: 跳转到详情页
   // uni.navigateTo({
   //   url: `/pagesMy/myHouse/detail?id=${item.id}`
   // })

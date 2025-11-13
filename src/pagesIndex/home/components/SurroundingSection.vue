@@ -29,19 +29,65 @@
           <text class="traffic-text">{{ item }}</text>
         </view>
       </view>
-
-      <!-- 公交 -->
-      <view v-if="trafficData.bus && trafficData.bus.length > 0" class="traffic-group">
-        <view v-for="(item, index) in trafficData.bus" :key="'bus-' + index" class="traffic-item">
-          <!-- <image class="traffic-icon" src="/static/index/bus.png" mode="aspectFit"></image> -->
-          <text class="traffic-text">{{ item }}</text>
-        </view>
+      <view v-else class="content">
+        <view class="empty-content">暂无数据</view>
       </view>
     </view>
 
-    <!-- 其他Tab内容 -->
-    <view v-else class="content">
-      <view class="empty-content">暂无数据</view>
+    <!-- 教育内容 -->
+    <view v-if="activeTab === 'education'" class="content">
+      <!-- 地铁 -->
+      <view v-if="trafficData.edu && trafficData.edu.length > 0" class="traffic-group">
+        <view
+          v-for="(item, index) in trafficData.edu"
+          :key="'subway-' + index"
+          class="traffic-item"
+        >
+          <!-- <image class="traffic-icon" src="/static/index/underground.png" mode="aspectFit"></image> -->
+          <text class="traffic-text">{{ item }}</text>
+        </view>
+      </view>
+
+      <view v-else class="content">
+        <view class="empty-content">暂无数据</view>
+      </view>
+    </view>
+
+    <!-- 医疗 -->
+    <view v-if="activeTab === 'medical'" class="content">
+      <!-- 地铁 -->
+      <view v-if="trafficData.med && trafficData.med.length > 0" class="traffic-group">
+        <view
+          v-for="(item, index) in trafficData.med"
+          :key="'subway-' + index"
+          class="traffic-item"
+        >
+          <!-- <image class="traffic-icon" src="/static/index/underground.png" mode="aspectFit"></image> -->
+          <text class="traffic-text">{{ item }}</text>
+        </view>
+      </view>
+
+      <view v-else class="content">
+        <view class="empty-content">暂无数据</view>
+      </view>
+    </view>
+
+    <!-- 生活 -->
+    <view v-if="activeTab === 'life'" class="content">
+      <!-- 地铁 -->
+      <view v-if="trafficData.life && trafficData.life.length > 0" class="traffic-group">
+        <view
+          v-for="(item, index) in trafficData.life"
+          :key="'subway-' + index"
+          class="traffic-item"
+        >
+          <!-- <image class="traffic-icon" src="/static/index/underground.png" mode="aspectFit"></image> -->
+          <text class="traffic-text">{{ item }}</text>
+        </view>
+      </view>
+      <view v-else class="content">
+        <view class="empty-content">暂无数据</view>
+      </view>
     </view>
   </view>
 </template>
@@ -52,7 +98,9 @@ import { ref } from 'vue'
 // 类型定义
 export interface TrafficData {
   subway?: string[] // 地铁信息
-  bus?: string[] // 公交信息
+  edu?: string[] // 教育信息
+  med?: string[] //医疗
+  life?: string[] //生活
 }
 
 export interface TabItem {
@@ -91,12 +139,13 @@ const handleTabChange = (key: string) => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/uni.scss';
 .surrounding-section {
   margin: 30rpx;
   padding: 39rpx 74rpx 39rpx 17rpx;
   background: #ffffff;
   border-radius: 22rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: $uni-box-shadow;
 }
 
 .section-title {

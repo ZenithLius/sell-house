@@ -2,7 +2,11 @@
   <view class="date-filter-container" :class="{ 'back-f5': !showLabel }">
     <text v-if="showLabel" class="filter-label">筛选</text>
 
-    <view class="date-picker-wrapper" :class="{ 'back-white': !showLabel }">
+    <view
+      class="date-picker-wrapper"
+      :class="{ 'back-white': !showLabel }"
+      @tap.capture="emitBeforeOpen('start')"
+    >
       <uni-datetime-picker
         v-model="startDate"
         type="date"
@@ -23,7 +27,11 @@
 
     <image class="date-separator" src="@/pagesMy/static/dateLine.png"></image>
 
-    <view class="date-picker-wrapper" :class="{ 'back-white': !showLabel }">
+    <view
+      class="date-picker-wrapper"
+      :class="{ 'back-white': !showLabel }"
+      @tap.capture="emitBeforeOpen('end')"
+    >
       <uni-datetime-picker
         v-model="endDate"
         type="date"
@@ -42,7 +50,7 @@
       <image class="date-icon" src="@/pagesMy/static/date.png"></image>
     </view>
 
-    <text v-if="!showLabel" class="filter-reset">重置</text>
+    <text v-if="!showLabel" @click="handleReset" class="filter-reset">重置</text>
   </view>
 </template>
 
@@ -65,10 +73,15 @@ const emit = defineEmits<{
   'update:startDate': [value: string]
   'update:endDate': [value: string]
   dateChange: [startDate: string, endDate: string]
+  'before-open': [which: 'start' | 'end']
 }>()
 
 const startDate = ref(props.startDate)
 const endDate = ref(props.endDate)
+
+const emitBeforeOpen = (which: 'start' | 'end') => {
+  emit('before-open', which)
+}
 
 const handleStartDateChange = (value: any) => {
   const dateValue = Array.isArray(value) ? value[0] : String(value)
@@ -82,6 +95,14 @@ const handleEndDateChange = (value: any) => {
   endDate.value = dateValue
   emit('update:endDate', endDate.value)
   emit('dateChange', startDate.value, endDate.value)
+}
+
+const handleReset = () => {
+  startDate.value = ''
+  endDate.value = ''
+  emit('update:startDate', '')
+  emit('update:endDate', '')
+  emit('dateChange', '', '')
 }
 </script>
 

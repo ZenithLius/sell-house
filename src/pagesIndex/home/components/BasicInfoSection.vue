@@ -41,7 +41,7 @@ withDefaults(defineProps<Props>(), {
   padding: 39rpx 74rpx 39rpx 16rpx;
   background: #ffffff;
   border-radius: 22rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: $uni-box-shadow;
 }
 
 .section-title {

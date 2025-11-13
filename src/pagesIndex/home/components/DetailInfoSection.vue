@@ -32,7 +32,7 @@
     </view>
 
     <!-- 中介费 -->
-    <view class="commission-container">
+    <view v-if="houseInfo.commission" class="commission-container">
       <image class="commission-icon" src="/static/images/commission.png" mode="aspectFit"></image>
       <text class="commission-text">{{ houseInfo.commission }}</text>
     </view>
@@ -91,6 +91,8 @@ const handleToggleTag = (index: number) => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/uni.scss';
+
 $card-radius: 22rpx;
 
 .section {
@@ -99,7 +101,7 @@ $card-radius: 22rpx;
   padding: 32rpx;
   background: #fff;
   border-radius: $card-radius;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: $uni-box-shadow;
   z-index: 10;
 
   .title {

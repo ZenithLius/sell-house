@@ -8,17 +8,18 @@ export interface ActionButton {
 
 export interface StaffAuthItem {
   id: string | number
-  image: string
-  title: string
-  code: string // 编号
-  district: string // 小区
-  datetime: string // 时间
-  status: string[] // 状态标签数组(待签约、签约等)
+  // 用于按钮判定的关键字段
+  status?: number | string // 签约状态（示例：0 待签约）
+  put_away?: number | string // 上下架：0 下架，1 上架
+  been_put_away?: number | string // 是否曾上架过：1 是
+  is_sale?: number | string // 是否已售：1 是
+  // 其他
+  [key: string]: any
 }
 
 const props = defineProps({
   list: {
-    type: Array as () => StaffAuthItem[],
+    type: Array as () => any[],
     default: () => [],
   },
   loading: {
@@ -29,9 +30,21 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
   actions: {
     type: Array as () => ActionButton[],
     default: () => [],
+  },
+  currentType: {
+    type: String,
+    default: '',
+  },
+  heightOffset: {
+    type: Number,
+    default: 700,
   },
 })
 
@@ -39,6 +52,7 @@ const emit = defineEmits<{
   loadMore: []
   itemClick: [item: StaffAuthItem]
   action: [action: string, item: StaffAuthItem]
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
@@ -68,79 +82,302 @@ const handleAction = (action: string, item: StaffAuthItem, event: Event) => {
   emit('action', action, item)
 }
 
+// 待签约按钮组
+const PENDING_ACTIONS: ActionButton[] = [
+  { label: '跟进记录', action: 'view' },
+  { label: '费用', action: 'fee' },
+  { label: '签约', action: 'sign' },
+  { label: '编辑', action: 'edit' },
+]
+
+// 待上架按钮组
+const WAITING_ACTIONS: ActionButton[] = [
+  { label: '跟进记录', action: 'view' },
+  { label: '上架', action: 'online' },
+  { label: '装修管理', action: 'decorate' },
+  { label: '编辑', action: 'edit' },
+  { label: '投资人', action: 'investor' },
+  { label: '签约信息', action: 'sign' },
+  { label: '费用', action: 'fee' },
+]
+// 已上架按钮组
+const LISTED_ACTIONS: ActionButton[] = [
+  { label: '跟进记录', action: 'view' },
+  { label: '下架', action: 'offline' },
+  { label: '装修管理', action: 'decorate' },
+  { label: '编辑', action: 'edit' },
+  { label: '投资人', action: 'investor' },
+  { label: '签约信息', action: 'sign' },
+  { label: '成交信息', action: 'deal' },
+  { label: '查看', action: 'detail' },
+  { label: '费用', action: 'fee' },
+]
+
+// 已售卖按钮组
+const SOLD_ACTIONS: ActionButton[] = [
+  { label: '跟进记录', action: 'view' },
+  { label: '下架', action: 'offline' },
+  { label: '装修管理', action: 'decorate' },
+  { label: '编辑', action: 'edit' },
+  { label: '手续管理', action: 'procedure' },
+  { label: '签约信息', action: 'sign' },
+  { label: '成交信息', action: 'deal' },
+  { label: '查看', action: 'detail' },
+  { label: '费用', action: 'fee' },
+]
+
+const getItemActions = (item: StaffAuthItem): ActionButton[] => {
+  const status = Number((item as any).status)
+  const putAway = Number((item as any).put_away)
+  // const beenPutAway = Number((item as any).been_put_away)
+  const isSale = Number((item as any).is_sale)
+
+  // 优先级：已售完 > 待签约 > 待上架 > 已上架
+  // put_away  其实就用他判断就行  等于 0待上架 ，1 已上架
+  if (status === 1) return PENDING_ACTIONS //待签约
+  if (isSale === 1) return SOLD_ACTIONS //已售卖
+
+  if (putAway === 0) return WAITING_ACTIONS //待上架
+  if (putAway === 1) return LISTED_ACTIONS //已上架
+  return []
+}
+
 // 获取状态颜色
 const getStatusColor = (status: string): string => {
   const colorMap: Record<string, string> = {
-    待签约: '#3399FF',
-    装修中: '#3399FF',
-    已签约: '#00B050',
-    签约到期: '#FF9900',
-    装修完成: '#863FCE',
-    审核驳回: '#FF0000',
-    装修支付: '#00B050',
-    上架审核: '#3399FF',
-    已上架: '#00B050',
-    已下架: '#999999',
-    危险池: 'red',
-    已售卖: '#00B050',
+    1: '#3399FF',
+    2: '#00B050',
   }
   return colorMap[status] || '#3399FF'
 }
+
+const getStatusText = (status: string) => {
+  const colorMap: Record<string, string> = {
+    1: '待签约',
+    2: '已签约',
+  }
+  return colorMap[status] || ''
+}
+
+// 装修
+const getStatusColor1 = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    0: '',
+    1: '#3399FF',
+    2: '#863FCEFF',
+    3: '#ffa939',
+  }
+  return colorMap[status] || '#3399FF'
+}
+
+const getStatusText1 = (status: string) => {
+  const colorMap: Record<string, string> = {
+    0: '',
+    1: '装修中',
+    2: '装修完成',
+    3: '装修交付',
+  }
+  return colorMap[status] || ''
+}
+
+// 上架
+const getStatusColor2 = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    0: '#999999FF',
+    1: '#00B050FF',
+  }
+  return colorMap[status] || '#999999FF'
+}
+
+const getStatusText2 = (status: string) => {
+  const colorMap: Record<string, string> = {
+    0: '已下架',
+    1: '已上架',
+  }
+  return colorMap[status] || ''
+}
+
+// 售卖
+const getStatusColor3 = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    0: '999999FF',
+    1: '#00B050FF',
+  }
+  return colorMap[status] || '999999FF'
+}
+
+const getStatusText3 = (status: string) => {
+  const colorMap: Record<string, string> = {
+    0: '',
+    1: '已售',
+  }
+  return colorMap[status] || ''
+}
+
+// 审核
+const getStatusColor4 = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    0: '#999999FF',
+    1: '#3399FFFF',
+    2: '#25b967',
+    3: '#FF0000FF',
+  }
+  return colorMap[status] || '#999999FF'
+}
+
+const getStatusText4 = (status: string) => {
+  const colorMap: Record<string, string> = {
+    0: '',
+    1: '上架审核',
+    2: '审核通过',
+    3: '审核驳回',
+  }
+  return colorMap[status] || ''
+}
+
+// 危险
+const getStatusColor5 = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    0: '#999999FF',
+    1: '#FB483B;',
+  }
+  return colorMap[status] || '#999999FF'
+}
+
+const getStatusText5 = (status: string) => {
+  const colorMap: Record<string, string> = {
+    0: '',
+    1: '危险池',
+  }
+  return colorMap[status] || ''
+}
+
+// 下拉刷新
+const onRefresh = () => {
+  emit('refresh')
+}
+
+// 刷新恢复
+const onRestore = () => {}
 </script>
 
 <template>
   <scroll-view
     class="staff-auth-list"
+    :style="{ height: `calc(100vh - env(safe-area-inset-bottom) - ${props.heightOffset}rpx)` }"
     scroll-y
     :scroll-top="scrollTop"
+    refresher-enabled
+    :refresher-triggered="refreshing"
+    @refresherrefresh="onRefresh"
+    @refresherrestore="onRestore"
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">
       <view v-for="item in list" :key="item.id" class="auth-item" @tap="handleItemClick(item)">
         <!-- 顶部时间和状态 -->
         <view class="item-header">
-          <text class="item-datetime">{{ item.datetime }}</text>
+          <text class="item-datetime">{{ item.create_time }}</text>
           <view class="status-badges">
-            <view
-              v-for="(statusItem, statusIndex) in item.status"
-              :key="statusIndex"
-              class="status-badge"
+            <!--
+             0全部，1待签约，2待上架，3已上架，4已售卖
+
+                签约 ：所有的tab下都显示，不进行校验
+                装修：待签约不显示,其余tab下都显示 全部
+                上架：已上架，全部(put_away ==1)下都显示
+                售卖：已售卖tab 全部下显示
+                审核：待上架tab 已售卖下显示 全部
+                危险：已上架tab下显示 全部
+-->
+            <text class="status-text" :style="{ color: getStatusColor(item.status) }">
+              {{ getStatusText(item.status) }}
+            </text>
+
+            <!-- 装修 返回0不显示，不做判断 -->
+            <text class="status-text" :style="{ color: getStatusColor1(item.house_remode) }">
+              {{ getStatusText1(item.house_remode) }}
+            </text>
+            <!-- 上架  status=2显示  status == 1待签约   ==2已签约
+             status== 2 {
+                put_away == 1 已上架
+                put_away ==  已下架
+                } -->
+            <text
+              v-if="item.status == 2"
+              class="status-text"
+              :style="{ color: getStatusColor2(item.put_away) }"
             >
-              <text class="status-text" :style="{ color: getStatusColor(statusItem) }">
-                {{ statusItem }}
-              </text>
-            </view>
+              {{ getStatusText2(item.put_away) }}
+            </text>
+            <!-- 售卖 不用处理判断，未售不显示 -->
+            <text
+              v-if="props.currentType === '4' || props.currentType === '0'"
+              class="status-text"
+              :style="{ color: getStatusColor3(item.is_sale) }"
+            >
+              {{ getStatusText3(item.is_sale) }}
+            </text>
+            <!-- 审核 不用做多余判断 -->
+            <text
+              v-if="props.currentType === '2' || props.currentType === '4'"
+              class="status-text"
+              :style="{ color: getStatusColor4(item.examine_status) }"
+            >
+              {{ getStatusText4(item.examine_status) }}
+            </text>
+            <!-- 危险 -->
+            <text
+              v-if="props.currentType === '3' || props.currentType === '0'"
+              class="status-text"
+              :style="{ color: getStatusColor5(item.is_danger) }"
+            >
+              {{ getStatusText5(item.is_danger) }}
+            </text>
           </view>
         </view>
 
         <!-- 主体内容 -->
         <view class="item-main">
           <!-- 左侧图片 -->
-          <image class="item-image" :src="item.image" mode="aspectFill"></image>
+          <image class="item-image" :src="item.pic" mode="aspectFill"></image>
 
           <!-- 右侧信息 -->
           <view class="item-info">
             <!-- 标题 -->
-            <text class="item-title">{{ item.title }}</text>
+            <text class="item-title">{{ item.house_title || item.house_list_title }}</text>
 
             <!-- 编号 -->
             <view class="item-detail">
-              <text class="detail-label">编号：</text>
-              <text class="detail-value">{{ item.code }}</text>
+              <item class="left">
+                <text class="detail-label">编号：</text>
+                <text class="detail-value">{{ item.house_code }}</text>
+              </item>
+
+              <item class="right">
+                <text class="detail-label">投资人：</text>
+                <text class="detail-value">{{ item.investor_name }}</text>
+              </item>
             </view>
 
             <!-- 小区 -->
             <view class="item-detail">
-              <text class="detail-label">小区：</text>
-              <text class="detail-value">{{ item.district }}</text>
+              <item class="left">
+                <text class="detail-label">小区：</text>
+                <text class="detail-value">{{ item.pharmacist_name }}</text>
+              </item>
+
+              <item class="right">
+                <text class="detail-label">到期日：</text>
+                <text class="detail-value">{{ item.sign_end_time }}</text>
+              </item>
             </view>
           </view>
         </view>
 
         <!-- 底部操作按钮 -->
-        <view v-if="actions && actions.length > 0" class="item-actions">
+        <view v-if="getItemActions(item).length > 0" class="item-actions">
           <view
-            v-for="(btn, btnIndex) in actions"
+            v-for="(btn, btnIndex) in getItemActions(item)"
             :key="btnIndex"
             class="action-button"
             @tap="handleAction(btn.action, item, $event)"
@@ -149,7 +386,6 @@ const getStatusColor = (status: string): string => {
           </view>
         </view>
       </view>
-
       <!-- 加载状态 -->
       <view v-if="loading || isLoadingMore" class="loading-wrapper">
         <text class="loading-text">加载中...</text>
@@ -170,7 +406,6 @@ const getStatusColor = (status: string): string => {
 
 <style lang="scss" scoped>
 .staff-auth-list {
-  height: calc(100vh - 400rpx);
   width: 100%;
   background: #f5f5f5;
 }
@@ -258,6 +493,12 @@ const getStatusColor = (status: string): string => {
   display: flex;
   align-items: center;
   gap: 8rpx;
+  .left {
+    flex: 1;
+  }
+  .right {
+    flex: 1;
+  }
 }
 
 .detail-label {
@@ -294,7 +535,6 @@ const getStatusColor = (status: string): string => {
   background: #ffffff;
   border-radius: 30rpx;
   border: 2px solid #863fce;
-  cursor: pointer;
 
   &:active {
     opacity: 0.8;

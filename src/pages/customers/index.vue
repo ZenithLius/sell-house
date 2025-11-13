@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import CardPoster from './components/CardPoster.vue'
+import { useScrollRefresh } from '@/composables/testUseScroller'
+import { useUserStore } from '@/stores'
+import { onShow } from '@dcloudio/uni-app'
+import { getVisitorListAPI } from '@/services/index/page'
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
@@ -12,45 +16,83 @@ const back = () => {
   })
 }
 
-// 用户信息
-const userInfo = ref({
-  avatar: '/static/customers/share.png',
-  name: '钟名白',
-  role: '经理',
-  phone: '13212345678',
-  company: '公司名称公司名称公司名称公司名称', // 公司名称
-  qrcode: '/static/customers/share.png', // 二维码图片，可以替换为实际的二维码
+const getFormatTime = (time: string) => {
+  return time.slice(0, 10)
+}
+
+const userInfo = computed(() => useUserStore().userInfo)
+
+// 访客数据接口
+interface VisitorItem {
+  id: number
+  name: string
+  phone: string
+  date: string
+}
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+onShow(async () => {
+  await refresh()
 })
 
-// 最近访客列表
-const recentVisitors = ref([
-  { id: 1, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 2, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 3, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 4, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 5, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 6, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 7, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 8, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 9, name: '沈妮称', phone: '131***1234', date: '2025.09.09' },
-  { id: 10, name: '沈妮称11', phone: '131***1234', date: '2025.09.09' },
-])
+//获取数据
+const fetchVisitorData = async (page: number) => {
+  uni.showLoading({
+    title: '加载中',
+  })
+  const res = await getVisitorListAPI({
+    page,
+    per_page: 10,
+  })
+  uni.hideLoading()
+  if (res.code === 200) {
+    console.log('获取到访客数据:', res)
+    return res.data.list || res.data || []
+  }
+  return []
+}
+
+const {
+  list: recentVisitors,
+  isLoading,
+  hasMore,
+  isTriggered,
+  onRefresherrefresh,
+  handleScrollToLower,
+  refresh,
+} = useScrollRefresh<any>({
+  fetchData: fetchVisitorData,
+  pageSize: 10,
+  immediate: false,
+})
 
 // 名片海报组件引用
 const cardPosterRef = ref()
 
 // 分享名片
 const shareCard = () => {
+  const userStore = useUserStore()
+  console.log('分享名片', userStore.userInfo)
   uni.showToast({
     title: '分享名片',
     icon: 'none',
   })
 }
 
-// 保存名片 - 打开名片生成弹窗
+// 保存名片
 const saveCard = () => {
-  console.log('点击保存名片', cardPosterRef.value)
-  // 调用子组件的 openPoster 方法
+  if (!userInfo.value) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
   cardPosterRef.value?.openPoster(userInfo.value)
 }
 
@@ -62,7 +104,7 @@ const editInfo = () => {
 }
 
 // 访客点击
-const onVisitorClick = (visitor: any) => {
+const onVisitorClick = (visitor: VisitorItem) => {
   console.log('访客点击:', visitor)
 }
 </script>
@@ -72,23 +114,24 @@ const onVisitorClick = (visitor: any) => {
     <ShNavbar @back="back" v-show="showNavbar" :title="'获客'" :showBack="true" />
 
     <!-- 名片区域 -->
-    <view class="card-section">
+    <view class="card-section" v-if="userInfo">
       <view class="card-container">
         <image class="card-bg" src="/static/customers/cardbackground.png" mode="aspectFill"></image>
         <view class="card-content">
           <image class="avatar" :src="userInfo.avatar" mode="aspectFill"></image>
           <view class="user-info">
             <view class="name-row">
-              <text class="name">{{ userInfo.name }}</text>
-              <text class="role">{{ userInfo.role }}</text>
+              <text class="name">{{ userInfo.nickname }}</text>
+              <!-- TODO 级别单位 -->
+              <!-- <text class="role">{{ userInfo.sex }}</text> -->
             </view>
-            <text class="phone">{{ userInfo.phone }}</text>
+            <text class="phone">{{ userInfo.mobile }}</text>
           </view>
         </view>
       </view>
 
       <!-- 操作按钮 -->
-      <view class="action-buttons">
+      <view class="action-buttons" v-if="userInfo">
         <view class="action-item" @tap="shareCard">
           <image class="action-icon" src="/static/customers/share.png" mode="aspectFit"></image>
           <text class="action-text">分享名片</text>
@@ -107,31 +150,44 @@ const onVisitorClick = (visitor: any) => {
     <!-- 最近访客区域 -->
     <view class="visitors-section">
       <view class="section-title">最近访客</view>
-      <scroll-view class="visitors-list" scroll-y>
+      <scroll-view
+        class="visitors-list"
+        scroll-y
+        refresher-enabled
+        :refresher-triggered="isTriggered"
+        @refresherrefresh="onRefresherrefresh"
+        @scrolltolower="handleScrollToLower"
+      >
         <view
           class="visitor-item"
           v-for="visitor in recentVisitors"
-          :key="visitor.id"
+          :key="visitor.agent_user_id"
           @tap="onVisitorClick(visitor)"
         >
           <view class="visitor-info">
-            <text class="visitor-name">{{ visitor.name }}</text>
+            <text class="visitor-name">{{ visitor.nickname }}</text>
             <view class="visitor-phone">
               <image class="phone-icon" src="/static/customers/phone.png" mode="aspectFit"></image>
-              <text class="phone-text">{{ visitor.phone }}</text>
+              <text class="phone-text">{{ visitor.mobile }}</text>
             </view>
           </view>
-          <text class="visitor-date">{{ visitor.date }}</text>
+          <text class="visitor-date">{{ getFormatTime(visitor.create_time) }}</text>
         </view>
 
-        <view class="space" :style="{ height: safeAreaInsets!.bottom + 20 + 'px' }"></view>
+        <!-- 加载状态提示 -->
+        <view v-if="isLoading" class="loading-text">加载中...</view>
+        <view v-else-if="!hasMore && recentVisitors.length > 0" class="loading-text"
+          >没有更多了</view
+        >
+        <view v-else-if="recentVisitors.length === 0" class="loading-text">暂无访客数据</view>
+
+        <view class="space" :style="{ height: safeAreaInsets!.bottom + 50 + 'px' }"></view>
       </scroll-view>
     </view>
 
     <!-- 名片海报组件 -->
     <CardPoster ref="cardPosterRef" />
 
-    <!-- 自定义 TabBar -->
     <ShMainTabbar />
   </view>
 </template>

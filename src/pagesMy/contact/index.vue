@@ -22,15 +22,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import ContactList from './components/ContactList.vue'
+import { getContactListAPI, type ContactItem as APIContactItem } from '../services/contact'
 
-interface ContactItem {
-  id: string | number
-  title: string
-  time: string
-  phone: string
-}
-
-const contactList = ref<ContactItem[]>([])
+const contactList = ref<APIContactItem[]>([])
 const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
@@ -41,103 +35,27 @@ const loadContacts = async () => {
 
   loading.value = true
   try {
-    // const res = await uni.request({
-    //   url: '/api/contact/list',
-    //   data: { page: page.value, pageSize: 10 }
-    // })
+    const res = await getContactListAPI()
 
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: ContactItem[] = [
-      {
-        id: 1,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 2,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-      {
-        id: 3,
-        title: '客服电话',
-        time: '8:00 - 20:00',
-        phone: '400-678-7878',
-      },
-    ]
+    if (res.code === 200) {
+      const mappedData: APIContactItem[] = res.data.list || []
 
-    if (page.value === 1) {
-      contactList.value = mockData
+      if (page.value === 1) {
+        contactList.value = mappedData
+      } else {
+        contactList.value.push(...mappedData)
+      }
+
+      // 判断是否还有更多数据
+      const total = res.data?.total || 0
+      const currentPage = res.data?.current_page || page.value
+      const perPage = res.data?.per_page || mappedData.length
+      hasMore.value = currentPage * perPage < total
     } else {
-      contactList.value.push(...mockData)
-    }
-
-    // 模拟没有更多数据
-    if (page.value >= 1) {
-      hasMore.value = false
+      uni.showToast({
+        title: res.msg || '加载失败',
+        icon: 'none',
+      })
     }
   } catch (error) {
     console.error('加载客服列表失败:', error)

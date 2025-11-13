@@ -13,11 +13,6 @@
           :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
           class="card-poster-canvas"
         ></canvas>
-
-        <!-- 调试信息（生成中显示） -->
-        <view v-if="!posterImage" class="card-debug-info">
-          <text>{{ debugMsg }}</text>
-        </view>
       </view>
 
       <!-- 保存按钮 -->
@@ -29,17 +24,8 @@
 </template>
 
 <script setup lang="ts">
+import type { UserInfo } from '@/types/member'
 import { ref, getCurrentInstance } from 'vue'
-
-// 定义用户信息类型
-interface UserInfo {
-  avatar: string
-  name: string
-  role: string
-  phone: string
-  company: string
-  qrcode: string
-}
 
 const showCardPoster = ref(false) // 是否显示名片弹窗
 const posterImage = ref('') // 生成的名片图片路径
@@ -48,11 +34,10 @@ const debugMsg = ref('初始化中...') // 调试信息
 // 用户信息
 const userInfo = ref<UserInfo>({
   avatar: '',
-  name: '',
-  role: '',
-  phone: '',
-  company: '',
-  qrcode: '',
+  nickname: '',
+  mobile: '',
+  company_tile: '',
+  qrcode: 'http://bangmaifang.oss-cn-shenzhen.aliyuncs.com/20251104/6909aaa304a6f.png',
 })
 
 // 获取系统信息
@@ -72,6 +57,8 @@ const self = instance?.proxy as any
 // 打开名片海报（对外暴露）
 const openPoster = (data: UserInfo) => {
   userInfo.value = data
+  userInfo.value.qrcode =
+    'http://bangmaifang.oss-cn-shenzhen.aliyuncs.com/20251104/6909aaa304a6f.png'
   showCardPoster.value = true
   posterImage.value = ''
   debugMsg.value = '准备生成名片...'
@@ -142,17 +129,11 @@ const drawRoundRect = (ctx: any, x: number, y: number, w: number, h: number, r: 
 // 生成名片海报
 const generateCardPoster = async () => {
   try {
-    debugMsg.value = '开始绘制名片...'
-    console.log('===== 开始生成名片 =====')
-
-    // 1. 下载网络图片到本地（如果是网络图片）
-    debugMsg.value = '下载图片资源...'
-    console.log('1. 下载图片资源')
+    // 1. 下载网络图片到本地
     const [localAvatar, localQrcode] = await Promise.all([
       downloadImage(userInfo.value.avatar),
       downloadImage(userInfo.value.qrcode),
     ])
-    console.log('图片下载完成:', { localAvatar, localQrcode })
 
     const ctx = uni.createCanvasContext('cardCanvas', self)
     ctx.setTextBaseline('top')
@@ -208,8 +189,6 @@ const generateCardPoster = async () => {
     const paddingTop = Math.round(PADDING_TOP_RPX * rpx)
 
     // 1. 绘制卡片背景（使用渐变色）
-    console.log('1. 绘制卡片背景')
-    debugMsg.value = '绘制卡片背景...'
     const cardMarginTop = Math.round(CARD_MARGIN_TOP_RPX * rpx)
     const cardWidth = Math.round(CARD_WIDTH_RPX * rpx)
     const cardHeight = Math.round(CARD_HEIGHT_RPX * rpx)
@@ -227,8 +206,6 @@ const generateCardPoster = async () => {
     ctx.fill()
 
     // 3. 绘制中间大头像（带白色边框，横切卡片顶部）
-    console.log('3. 绘制中间大头像')
-    debugMsg.value = '绘制中间头像...'
     const mainAvatarSize = Math.round(MAIN_AVATAR_SIZE_RPX * rpx)
     const mainAvatarX = (canvasWidth - mainAvatarSize) / 2
     // 头像Y坐标 = 卡片顶部 + 向上偏移量（负值会让头像向上超出卡片）
@@ -250,34 +227,26 @@ const generateCardPoster = async () => {
     drawCircleImage(ctx, localAvatar, mainAvatarX, mainAvatarY, mainAvatarSize / 2)
 
     // 4. 绘制姓名
-    console.log('4. 绘制姓名')
-    debugMsg.value = '绘制姓名...'
     const nameY = mainAvatarY + mainAvatarSize + Math.round(NAME_Y_OFFSET_RPX * rpx)
     ctx.setFillStyle(NAME_COLOR)
     ctx.setFontSize(Math.round(NAME_FONT_RPX * rpx))
     ctx.setTextAlign('center')
-    ctx.fillText(userInfo.value.name, canvasWidth / 2, nameY)
+    ctx.fillText(userInfo.value.nickname, canvasWidth / 2, nameY)
 
     // 5. 绘制电话号码
-    console.log('5. 绘制电话号码')
-    debugMsg.value = '绘制电话...'
     const phoneY = nameY + Math.round(PHONE_Y_OFFSET_RPX * rpx) + Math.round(NAME_FONT_RPX * rpx)
     ctx.setFillStyle(PHONE_COLOR)
     ctx.setFontSize(Math.round(PHONE_FONT_RPX * rpx))
-    ctx.fillText(userInfo.value.phone, canvasWidth / 2, phoneY)
+    ctx.fillText(userInfo.value.mobile, canvasWidth / 2, phoneY)
 
     // 6. 绘制公司名称
-    console.log('6. 绘制公司名称')
-    debugMsg.value = '绘制公司名称...'
     const companyY =
       phoneY + Math.round(COMPANY_Y_OFFSET_RPX * rpx) + Math.round(PHONE_FONT_RPX * rpx)
     ctx.setFillStyle(COMPANY_COLOR)
     ctx.setFontSize(Math.round(COMPANY_FONT_RPX * rpx))
-    ctx.fillText(userInfo.value.company, canvasWidth / 2, companyY)
+    ctx.fillText(userInfo.value.company_tile, canvasWidth / 2, companyY)
 
     // 7. 绘制二维码背景
-    console.log('7. 绘制二维码')
-    debugMsg.value = '绘制二维码...'
     const qrSize = Math.round(QR_SIZE_RPX * rpx)
     const qrPadding = Math.round(QR_PADDING_RPX * rpx)
     const qrBgSize = qrSize + qrPadding * 2
@@ -294,20 +263,13 @@ const generateCardPoster = async () => {
     ctx.drawImage(localQrcode, qrX, qrY, qrSize, qrSize)
 
     // 8. 绘制底部提示文字（扫码关注查看更多好房）
-    console.log('8. 绘制提示文字')
-    debugMsg.value = '绘制提示文字...'
     const tipY = qrBgY + qrBgSize + Math.round(TIP_Y_OFFSET_RPX * rpx)
     ctx.setFillStyle(TIP_COLOR)
     ctx.setFontSize(Math.round(TIP_FONT_RPX * rpx))
     ctx.fillText(TIP_TEXT, canvasWidth / 2, tipY)
 
     // 9. 执行绘制并转换为图片
-    console.log('9. 执行绘制')
-    debugMsg.value = '渲染中...'
     ctx.draw(false, () => {
-      console.log('10. 开始转换图片')
-      debugMsg.value = '转换图片...'
-
       uni.canvasToTempFilePath(
         {
           canvasId: 'cardCanvas',
@@ -320,14 +282,10 @@ const generateCardPoster = async () => {
           fileType: 'png',
           quality: 1,
           success: (res) => {
-            console.log('✅ 名片生成成功!', res.tempFilePath)
             posterImage.value = res.tempFilePath
-            debugMsg.value = '生成成功！'
             uni.showToast({ title: '名片生成成功', icon: 'success' })
           },
           fail: (err) => {
-            console.error('❌ 名片生成失败:', err)
-            debugMsg.value = `失败: ${err.errMsg}`
             uni.showToast({ title: '名片生成失败', icon: 'none' })
           },
         },
@@ -335,8 +293,6 @@ const generateCardPoster = async () => {
       )
     })
   } catch (error: any) {
-    console.error('❌ 错误:', error)
-    debugMsg.value = `错误: ${error.message}`
     uni.showToast({ title: '名片生成失败', icon: 'none' })
   }
 }
@@ -385,36 +341,31 @@ const saveImageToPhotosAlbum = () => {
       closePoster()
     },
     fail: (err) => {
-      console.error('保存失败:', err)
       uni.showToast({ title: '保存失败', icon: 'none' })
     },
   })
 }
 
-// 对外暴露方法
 defineExpose({
   openPoster,
 })
 </script>
 
 <style scoped lang="scss">
-// ===== 名片海报弹窗样式 =====
 .card-poster-container {
   position: relative;
 }
 
-// 遮罩层【修改此处可改变遮罩层样式】
 .card-mask {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7); // 遮罩背景色和透明度【修改此值改变遮罩颜色】
+  background: rgba(0, 0, 0, 0.7);
   z-index: 999;
 }
 
-// 海报包裹层【修改此处可改变弹窗位置】
 .card-poster-wrapper {
   position: fixed;
   top: 50%;
@@ -426,55 +377,48 @@ defineExpose({
   align-items: center;
 }
 
-// 海报内容区【修改此处可改变海报容器样式】
 .card-poster-content {
   position: relative;
   background: transparent;
-  border-radius: 8px; // 海报整体圆角【修改此值改变海报圆角大小】
+  border-radius: 8px;
   overflow: hidden;
-  // 已取消阴影效果
 }
 
-// Canvas 画布【修改此处可改变画布样式】
 .card-poster-canvas {
   width: 375px;
   height: 667px;
   background: transparent;
 }
 
-// 调试信息【修改此处可改变调试信息样式】
 .card-debug-info {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.7); // 调试信息背景色【修改此值改变调试信息背景】
-  color: #fff; // 调试信息文字颜色【修改此值改变文字颜色】
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
   padding: 20px;
-  border-radius: 8px; // 调试信息圆角【修改此值改变圆角大小】
-  font-size: 14px; // 调试信息字号【修改此值改变文字大小】
+  border-radius: 8px;
+  font-size: 14px;
   white-space: pre-wrap;
   max-width: 300px;
   text-align: center;
 }
 
-// 按钮组【修改此处可改变按钮位置】
 .card-btn-group {
-  margin-top: 46px; // 按钮距离海报的距离【修改此值改变按钮位置】
+  margin-top: 46px;
   display: flex;
   gap: 15px;
 }
-
-// 保存按钮【修改此处可改变按钮样式】
 .card-save-btn {
-  width: 380rpx; // 按钮宽度【修改此值改变按钮宽度】
-  height: 76rpx; // 按钮高度【修改此值改变按钮高度】
-  background: #863fce; // 按钮背景色【修改此值改变按钮背景颜色】
-  border-radius: 10rpx; // 按钮圆角【修改此值改变按钮圆角】
+  width: 380rpx;
+  height: 76rpx;
+  background: #863fce;
+  border-radius: 10rpx;
   font-family: Source Han Sans CN;
   font-weight: 400;
-  font-size: 28rpx; // 按钮文字大小【修改此值改变文字大小】
-  color: #ffffff; // 按钮文字颜色【修改此值改变文字颜色】
+  font-size: 28rpx;
+  color: #ffffff;
   line-height: 42rpx;
   display: flex;
   justify-content: center;

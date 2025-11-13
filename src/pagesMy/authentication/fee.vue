@@ -9,14 +9,21 @@
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }">
       <!-- list -->
-      <FeeList :list="feeList" :loading="loading" :hasMore="hasMore" @loadMore="loadMore" />
+      <FeeList
+        :list="feeList"
+        :loading="loading"
+        :hasMore="hasMore"
+        @loadMore="loadMore"
+        @refresh="onRefresh"
+      />
     </view>
     <ShBottomBtns
       v-if="currentRole !== 'manager'"
       :buttons="bottomButtons"
+      :paddingBottom="20"
       @click="handleButtonClick"
     />
-    <BottomTabbar />
+    <!-- <BottomTabbar /> -->
     <view class="pop" :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }">
       <ShPopup
         ref="addFeePopup"
@@ -35,59 +42,188 @@ import { ref, watch } from 'vue'
 import FeeList from './components/FeeList.vue'
 import BottomTabbar from './components/BottomTabbar.vue'
 import ShPopup from '@/components/ShPopup.vue'
-interface FeeItem {
-  id: string | number
-  title: string
-  amount: number
-  time: string
-  remark: string
-}
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const currentRole = uni.getStorageSync('currentOtherManageType')
 import type { CustomFormField } from '@/types/customFormField'
-const formData = ref({
-  area: '',
-  feeName: '',
-  feeAmount: '',
-  idCard: '',
+import { addFeeAPI, feeListAPI, feeTypeListAPI, feeListManagerAPI } from '../services/staff'
+import { onLoad } from '@dcloudio/uni-app'
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+const houseListId = ref('')
+
+onLoad(async (options) => {
+  houseListId.value = options?.house_list_id
+  await Promise.all([getFeeTypeListReq(), getFeeListReq()])
 })
 
-const fields: CustomFormField[] = [
+// 获取费用类型
+const getFeeTypeListReq = async () => {
+  const res = await feeTypeListAPI({})
+  const target = fields.value.find((f) => f.key === 'expense_type_id')
+  if (target) {
+    target.options = res.data
+  }
+}
+
+/**
+ * ==================================费用列表========================================
+ */
+
+const getFeeListReq = async (isRefresh = false) => {
+  if (loading.value) return
+
+  loading.value = true
+  try {
+    if (isRefresh) {
+      currentPage.value = 1
+    }
+
+    const params = {
+      house_list_id: houseListId.value,
+      page: currentPage.value,
+      per_page: pageSize,
+    }
+    const res =
+      currentRole === 'manager' ? await feeListManagerAPI(params) : await feeListAPI(params)
+
+    if (currentPage.value === 1 || isRefresh) {
+      feeList.value = res.data.list || []
+    } else {
+      feeList.value = [...feeList.value, ...(res.data.list || [])]
+    }
+
+    hasMore.value = res.data.list && res.data.list.length >= pageSize
+  } catch (error) {
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none',
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+interface FeeItem {
+  created_at: string
+  created_time: string
+  expense_type_id: number
+  expense_type_title: string
+  price: string
+  remark: string
+  title: null
+}
+
+const formData = ref({
+  expense_type_id: '',
+  title: '',
+  price: '',
+  remark: '',
+})
+
+/**
+ * ==========================================================================
+ *                                 @新增费用
+ * ==========================================================================
+ */
+
+const addFeeReq = async () => {
+  if (!formData.value.expense_type_id) {
+    uni.showToast({
+      title: '请选择费用类型',
+      icon: 'none',
+    })
+    return
+  }
+  if (Number(formData.value.expense_type_id) === 1 && !formData.value.title) {
+    uni.showToast({
+      title: '请输入费用名称',
+      icon: 'none',
+    })
+    return
+  }
+  if (!formData.value.price) {
+    uni.showToast({
+      title: '请输入费用金额',
+      icon: 'none',
+    })
+    return
+  }
+
+  uni.showLoading({
+    title: '保存中',
+  })
+  const params = {
+    house_list_id: houseListId.value,
+    ...formData.value,
+  }
+  const res = await addFeeAPI(params)
+  uni.hideLoading()
+  if (res.code === 200) {
+    uni.showToast({
+      title: '保存成功',
+      icon: 'none',
+    })
+    addFeePopup.value?.close()
+    formData.value = {
+      expense_type_id: '',
+      title: '',
+      price: '',
+      remark: '',
+    }
+    await getFeeListReq(true) // 刷新列表
+  } else {
+    uni.showToast({
+      title: res.msg || '保存失败',
+      icon: 'none',
+    })
+  }
+}
+
+// 弹窗取消
+const handlePopupCancel = () => {
+  console.log('取消添加费用')
+}
+
+// 弹窗确认
+const handlePopupConfirm = () => {
+  addFeeReq()
+}
+
+const fields = ref<CustomFormField[]>([
   {
-    key: 'area',
+    key: 'expense_type_id',
     label: '费用类型',
     type: 'select',
     placeholder: '请选择',
-    options: [
-      { label: '费用类型1', value: '1' },
-      { label: '费用类型2', value: '2' },
-      { label: '费用类型3', value: '3' },
-      { label: '其他', value: '4' },
-    ],
+    options: [],
   },
   {
-    key: 'feeName',
+    key: 'title',
     label: '费用名称',
     placeholder: '请输入',
     type: 'input',
-    visible: (form) => form.area === '4',
+    visible: (form) => form.expense_type_id === 1,
   },
   {
-    key: 'feeAmount',
+    key: 'price',
     label: '费用金额',
     inputType: 'digit',
     placeholder: '请输入',
     type: 'input',
   },
-  { key: 'idCard', label: '备注', placeholder: '请输入', type: 'textarea' },
-]
+  { key: 'remark', label: '备注', placeholder: '请输入', type: 'textarea' },
+])
 
 watch(
-  () => formData.value.area,
+  () => formData.value.expense_type_id,
   (newVal) => {
     if (newVal !== '4') {
-      formData.value.feeName = ''
+      formData.value.title = ''
     }
   },
 )
@@ -105,22 +241,8 @@ const addFeePopup = ref<InstanceType<typeof ShPopup> | null>(null)
 
 const handleButtonClick = (index: number) => {
   if (index === 0) {
-    console.log('新增费用')
     addFeePopup.value?.open()
   }
-}
-
-// 弹窗取消
-const handlePopupCancel = () => {
-  console.log('取消添加费用')
-}
-
-// 弹窗确认
-const handlePopupConfirm = () => {
-  console.log('确认添加费用')
-  // TODO: 这里添加表单验证和提交逻辑
-  // 提交成功后关闭弹窗
-  addFeePopup.value?.close()
 }
 
 // 数据状态
@@ -130,58 +252,23 @@ const hasMore = ref(true)
 const currentPage = ref(1)
 const pageSize = 10
 
-// 初始化加载数据
-const loadFeeList = async (page: number) => {
-  loading.value = true
-  try {
-    // TODO: 替换为实际的API请求
-    // const res = await getFeeListAPI({ page, pageSize })
-
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: FeeItem[] = Array.from({ length: pageSize }, (_, index) => ({
-      id: (page - 1) * pageSize + index + 1,
-      title: '收房价',
-      amount: 120000.0,
-      time: '2025.09.01 10:0:00',
-      remark: '省注文字介绍省注文字介绍省注文字介绍省注文字介绍省注文字介绍',
-    }))
-
-    if (page === 1) {
-      feeList.value = mockData
-    } else {
-      feeList.value = [...feeList.value, ...mockData]
-    }
-
-    // 模拟最多3页数据
-    hasMore.value = page < 3
-  } catch (error) {
-    console.error('加载费用列表失败:', error)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 // 触底加载更多
-const loadMore = () => {
+const loadMore = async () => {
   if (!hasMore.value || loading.value) {
     return
   }
   currentPage.value++
-  loadFeeList(currentPage.value)
+  await getFeeListReq()
 }
 
-// 返回
+// 下拉刷新
+const onRefresh = async () => {
+  await getFeeListReq(true)
+}
+
 const handleBack = () => {
   uni.navigateBack()
 }
-
-// 页面加载时获取数据
-loadFeeList(1)
 </script>
 
 <style lang="scss" scoped>

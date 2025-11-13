@@ -12,18 +12,25 @@
     </scroll-view>
     <ShBottomBtns
       :buttons="bottomButtons"
+      :paddingBottom="20"
       @click="handleButtonClick"
       :backgroundColor="'#ffffff'"
     />
-    <BottomTabbar />
+    <!-- <BottomTabbar /> -->
+    <!-- <ShBottomTabbar /> -->
   </view>
 </template>
 
 <script setup lang="ts">
 const { safeAreaInsets } = uni.getSystemInfoSync()
 import type { CustomFormField } from '@/types/customFormField'
-import BottomTabbar from './components/BottomTabbar.vue'
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { addFollowRecordAPI } from '@/pagesMy/services/staff'
+const currentHouseId = ref('')
+onLoad((options) => {
+  currentHouseId.value = options?.house_list_id || ''
+})
 
 const bottomButtons = [
   {
@@ -32,35 +39,79 @@ const bottomButtons = [
     color: '#ffffff',
   },
 ]
-
+const addFollowRecordReq = async () => {
+  const params = {
+    house_list_id: currentHouseId.value,
+    title: formData.value.title,
+    content: formData.value.content,
+    mul_img: formData.value.mul_img.join(','),
+  }
+  uni.showLoading({
+    title: '保持中',
+  })
+  const res = await addFollowRecordAPI(params)
+  if (res.code === 200) {
+    uni.showToast({
+      title: '新增成功',
+      icon: 'none',
+    })
+    uni.navigateBack()
+  } else {
+    uni.showToast({
+      title: '新增失败',
+      icon: 'none',
+    })
+  }
+  uni.hideLoading()
+}
 const handleButtonClick = (index: number) => {
   if (index === 0) {
-    console.log('保存/修改======', formData.value)
-  } else if (index === 1) {
-    console.log('续约')
+    // 表单验证
+    if (!formData.value.title) {
+      uni.showToast({
+        title: '请输入标题',
+        icon: 'none',
+      })
+      return
+    }
+    if (!formData.value.content) {
+      uni.showToast({
+        title: '请输入内容',
+        icon: 'none',
+      })
+      return
+    }
+    // if (!formData.value.mul_img.length) {
+    //   uni.showToast({
+    //     title: '请上传图片',
+    //     icon: 'none',
+    //   })
+    //   return
+    // }
+    addFollowRecordReq()
   }
 }
 
 const formData = ref({
-  communityName: '',
-  area: '',
-  images: '',
+  title: '',
+  content: '',
+  mul_img: [],
 })
 
 const fields: CustomFormField[] = [
   {
-    key: 'communityName',
+    key: 'title',
     label: '标题',
     type: 'input',
     placeholder: '请输入',
   },
   {
-    key: 'area',
+    key: 'content',
     label: '内容',
     type: 'textarea',
     placeholder: '请描述你的问题',
   },
-  { key: 'images', label: '图片上传', type: 'upload' },
+  { key: 'mul_img', label: '图片上传', type: 'upload' },
 ]
 
 const handleBack = () => {
@@ -81,7 +132,7 @@ const handleBack = () => {
     animation: slideDown 0.3s ease-out;
   }
   .content {
-    height: calc(100vh - env(safe-area-inset-bottom) - 200rpx);
+    height: calc(100vh - env(safe-area-inset-bottom) - 100rpx);
   }
 }
 </style>

@@ -61,10 +61,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// 生成年份列表（当前年份前后各5年）
+// 生成年份列表
 const currentYear = new Date().getFullYear()
 const years = ref<number[]>([])
-for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+for (let i = currentYear - 20; i <= currentYear + 20; i++) {
   years.value.push(i)
 }
 

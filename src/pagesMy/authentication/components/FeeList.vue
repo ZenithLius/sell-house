@@ -3,16 +3,19 @@ import { ref } from 'vue'
 const currentRole = uni.getStorageSync('currentOtherManageType')
 
 interface FeeItem {
-  id: string | number
-  title: string
-  amount: number
-  time: string
+  created_at: string
+  created_time: string
+  expense_type_id: number
+  expense_type_title: string //内部员工使用
+  expense_type_name: string //片区经理使用
+  price: string
   remark: string
+  title: null
 }
 
 const props = defineProps({
   list: {
-    type: Array as () => FeeItem[],
+    type: Array as () => any[],
     default: () => [],
   },
   loading: {
@@ -27,10 +30,12 @@ const props = defineProps({
 
 const emit = defineEmits<{
   loadMore: []
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
 const isLoadingMore = ref(false)
+const isRefreshing = ref(false)
 
 // 触底加载
 const handleScrollToLower = () => {
@@ -44,9 +49,22 @@ const handleScrollToLower = () => {
   }, 500)
 }
 
+// 下拉刷新
+const handleRefresh = async () => {
+  if (isRefreshing.value || props.loading) {
+    return
+  }
+  isRefreshing.value = true
+  emit('refresh')
+  // 延迟重置状态，确保刷新操作完成
+  setTimeout(() => {
+    isRefreshing.value = false
+  }, 1000)
+}
+
 // 格式化金额
-const formatAmount = (amount: number) => {
-  return `¥ ${amount.toFixed(2)}`
+const formatAmount = (amount: string) => {
+  return `¥ ${amount}`
 }
 </script>
 
@@ -57,19 +75,22 @@ const formatAmount = (amount: number) => {
     :class="{ 'has-bottom-btn': currentRole === 'manager' }"
     :scroll-top="scrollTop"
     @scrolltolower="handleScrollToLower"
+    refresher-enabled
+    :refresher-triggered="isRefreshing"
+    @refresherrefresh="handleRefresh"
   >
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="fee-item">
+      <view v-for="item in list" :key="item.expense_type_id" class="fee-item">
         <!-- 标题和金额 -->
         <view class="fee-header">
-          <text class="fee-title">{{ item.title }}</text>
-          <text class="fee-amount">{{ formatAmount(item.amount) }}</text>
+          <text class="fee-title">{{ item.expense_type_title || item.expense_type_name }}</text>
+          <text class="fee-amount">{{ formatAmount(item.price) }}</text>
         </view>
 
         <!-- 时间 -->
         <view class="fee-time">
           <text class="time-label">时间：</text>
-          <text class="time-value">{{ item.time }}</text>
+          <text class="time-value">{{ item.created_time }}</text>
         </view>
 
         <!-- 备注 -->

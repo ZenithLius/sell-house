@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from 'vue'
+import { uploadFileAPI } from '@/services/upload'
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 interface OptionItem {
-  label: string
-  value: any
+  title: string
+  id: any
+  nickname: string
+  mobile?: string
   phone?: string
 }
 
@@ -25,6 +28,7 @@ interface FieldConfig {
     | 'radio'
     | 'radio-group'
     | 'line'
+    | 'select-multiple'
   placeholder?: string
   inputType?: 'text' | 'number' | 'idcard' | 'digit'
   password?: boolean
@@ -57,6 +61,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', v: Record<string, any>): void
   (e: 'fieldChange', key: string, value: any): void
+  (e: 'sendCode', phone: string): void
+  (e: 'fieldChangeSearch', value: any): void
 }>()
 
 const form = ref<Record<string, any>>({ ...props.modelValue })
@@ -64,7 +70,7 @@ const form = ref<Record<string, any>>({ ...props.modelValue })
 watch(
   () => props.modelValue,
   (v) => {
-    form.value = { ...v }
+    Object.assign(form.value, v)
   },
   { deep: true },
 )
@@ -79,8 +85,16 @@ watch(
 
 const getSelectedLabel = (field: FieldConfig) => {
   const val = form.value[field.key]
-  const opt = field.options?.find((o) => o.value === val)
-  return opt?.label ?? ''
+  const opt = field.options?.find((o) => o.id === val)
+  return opt?.title ?? ''
+}
+
+const getMultipleSelectedLabel = (field: FieldConfig) => {
+  const vals = form.value[field.key]
+  if (!Array.isArray(vals) || !field.options || field.options.length === 0) return ''
+  const map = new Map(field.options.map((o) => [o.id, o.title]))
+  const labels = vals.map((v: any) => map.get(v)).filter(Boolean) as string[]
+  return labels.join('、')
 }
 
 const fieldVisible = (field: FieldConfig) => {
@@ -90,9 +104,10 @@ const fieldVisible = (field: FieldConfig) => {
   return true
 }
 
-// 根据 visible 过滤可展示的字段，避免在模板中 v-for 与 v-if 混用
+// 根据 visible 过滤可展示的字段
 const renderFields = computed(() => props.fields.filter((f) => fieldVisible(f)))
 
+// 弹性布局表单项
 const renderBlocks = computed(() => {
   const blocks: Array<
     { type: 'single'; field: FieldConfig } | { type: 'grid'; cols: number; fields: FieldConfig[] }
@@ -141,14 +156,15 @@ const getGridTemplate = (block: { cols: number; fields: FieldConfig[] }) => {
   return widths.join(' ')
 }
 
-const onSelectChange = (field: FieldConfig, e: any) => {
-  const index = e?.detail?.value ?? 0
-  const opt = field.options?.[index]
-  const val = opt ? opt.value : undefined
-  form.value[field.key] = val
-  emit('fieldChange', field.key, val)
-}
+// const onSelectChange = (field: FieldConfig, e: any) => {
+//   const index = e?.detail?.value ?? 0
+//   const opt = field.options?.[index]
+//   const val = opt ? opt.id : undefined
+//   form.value[field.key] = val
+//   emit('fieldChange', field.key, val)
+// }
 
+//TODO UI跟后台接口校验不一致。目前在父组件单独做冗余处理。后期可使用加必填选项自动校验
 const validate = () => {
   const errors: { key: string; label: string; message: string }[] = []
   props.fields.forEach((f) => {
@@ -161,6 +177,9 @@ const validate = () => {
         empty = !v || !v.front || !v.back
       } else if (f.type === 'upload' || f.type === 'upload-video') {
         // 图片/视频上传需要检查数组是否为空
+        empty = !v || !Array.isArray(v) || v.length === 0
+      } else if (f.type === 'select-multiple') {
+        // 多选需要检查数组是否为空
         empty = !v || !Array.isArray(v) || v.length === 0
       } else {
         // 其他类型的常规检查
@@ -202,11 +221,24 @@ const chooseImage = (field: FieldConfig) => {
     count: remaining,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: (res) => {
-      const tempFilePaths = res.tempFilePaths
-      const newImages = [...currentImages, ...tempFilePaths]
-      form.value[field.key] = newImages
-      emit('fieldChange', field.key, newImages)
+    success: async (res) => {
+      try {
+        const tempFilePaths: string[] = Array.isArray(res.tempFilePaths)
+          ? res.tempFilePaths
+          : [res.tempFilePaths as string]
+        uni.showLoading({ title: '上传中...', mask: true })
+        const uploads = tempFilePaths.map((p) => uploadFileAPI(p))
+        const results = await Promise.all(uploads)
+        const urls = results.map((r: any) => r?.data?.url || '').filter((u: string) => !!u)
+        const newImages = [...currentImages, ...urls].slice(0, maxCount)
+        form.value[field.key] = newImages
+        emit('fieldChange', field.key, newImages)
+        uni.showToast({ title: '上传成功', icon: 'success' })
+      } catch (e) {
+        uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
     },
   })
 }
@@ -279,14 +311,25 @@ const chooseVideo = (field: FieldConfig) => {
     sourceType: ['album', 'camera'],
     maxDuration: 60,
     camera: 'back',
-    success: (res: any) => {
-      const video = {
-        url: res.tempFilePath,
-        duration: res.duration,
+    success: async (res: any) => {
+      try {
+        uni.showLoading({ title: '上传中...', mask: true })
+        const uploadRes: any = await uploadFileAPI(res.tempFilePath)
+        const url = uploadRes?.data?.url || uploadRes?.result?.url || ''
+        if (!url) throw new Error('上传失败')
+        const video = {
+          url,
+          duration: res.duration,
+        }
+        const newVideos = [...currentVideos, video].slice(0, maxCount)
+        form.value[field.key] = newVideos
+        emit('fieldChange', field.key, newVideos)
+        uni.showToast({ title: '上传成功', icon: 'success' })
+      } catch (e) {
+        uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+      } finally {
+        uni.hideLoading()
       }
-      const newVideos = [...currentVideos, video]
-      form.value[field.key] = newVideos
-      emit('fieldChange', field.key, newVideos)
     },
   })
 }
@@ -315,6 +358,11 @@ const previewVideo = (video: any) => {
 const popupRef = ref<any>(null)
 const currentField = ref<FieldConfig | null>(null)
 const tempSelectedValue = ref<any>(null)
+
+// select-multiple 弹窗相关
+const multiPopupRef = ref<any>(null)
+const currentMultiField = ref<FieldConfig | null>(null)
+const tempSelectedValues = ref<any[]>([])
 
 // selectSearch 弹窗相关
 const searchPopupRef = ref<any>(null)
@@ -346,7 +394,43 @@ const confirmSelect = () => {
 }
 
 const selectOption = (option: OptionItem) => {
-  tempSelectedValue.value = option.value
+  tempSelectedValue.value = option.id
+}
+
+const openMultiSelectPopup = (field: FieldConfig) => {
+  currentMultiField.value = field
+  const cur = form.value[field.key]
+  tempSelectedValues.value = Array.isArray(cur) ? [...cur] : []
+  multiPopupRef.value?.open('bottom')
+}
+
+const closeMultiPopup = () => {
+  multiPopupRef.value?.close()
+  currentMultiField.value = null
+  tempSelectedValues.value = []
+}
+
+const toggleMultiOption = (option: OptionItem) => {
+  const idx = tempSelectedValues.value.findIndex((v) => v === option.id)
+  if (idx > -1) {
+    tempSelectedValues.value.splice(idx, 1)
+  } else {
+    const max = currentMultiField.value?.maxCount ?? Infinity
+    if (tempSelectedValues.value.length >= max) {
+      if (isFinite(max)) uni.showToast({ title: `最多选择${max}个`, icon: 'none' })
+      return
+    }
+    tempSelectedValues.value.push(option.id)
+  }
+}
+
+const confirmMultiSelect = () => {
+  if (currentMultiField.value) {
+    const vals = [...tempSelectedValues.value]
+    form.value[currentMultiField.value.key] = vals
+    emit('fieldChange', currentMultiField.value.key, vals)
+  }
+  closeMultiPopup()
 }
 
 // selectSearch 相关方法
@@ -357,9 +441,9 @@ const openSearchPopup = (field: FieldConfig) => {
   searchKeyword.value = ''
   searchList.value =
     field.options?.map((opt, idx) => ({
-      id: opt.value,
-      name: opt.label,
-      phone: opt.phone,
+      id: opt.id,
+      name: opt.nickname || opt.title || '',
+      phone: opt.mobile || opt?.phone || '',
     })) || []
   searchHasMore.value = false
   searchPopupRef.value?.open('bottom')
@@ -382,20 +466,20 @@ const confirmSearchSelect = () => {
 }
 
 const handleSearchKeyword = (keyword: string) => {
-  if (currentSearchField.value?.options) {
-    const filtered = currentSearchField.value.options.filter((opt) =>
-      opt.label.toLowerCase().includes(keyword.toLowerCase()),
-    )
-    searchList.value = filtered.map((opt) => ({
-      id: opt.value,
-      name: opt.label,
-      phone: '',
-    }))
-  }
+  // if (currentSearchField.value?.options) {
+  //   const filtered = currentSearchField.value.options.filter((opt) =>
+  //     opt.nickname.toLowerCase().includes(keyword.toLowerCase()),
+  //   )
+  //   searchList.value = filtered.map((opt) => ({
+  //     id: opt.id,
+  //     name: opt.nickname,
+  //     phone: opt.mobile,
+  //   }))
+  // }
+  emit('fieldChangeSearch', keyword)
 }
 
 const handleLoadMoreSearch = () => {
-  // 分页加载
   console.log('加载更多=====')
 }
 
@@ -405,9 +489,24 @@ const handleSelectSearchItem = (id: string | number) => {
 
 const getSearchSelectedLabel = (field: FieldConfig) => {
   const val = form.value[field.key]
-  const opt = field.options?.find((o) => o.value === val)
-  return opt?.label ?? ''
+  const opt = field.options?.find((o) => o.id === val)
+  return opt?.nickname ?? opt?.title ?? ''
 }
+
+watch(
+  () => currentSearchField.value?.options,
+  (opts) => {
+    if (!currentSearchField.value) return
+    const list = Array.isArray(opts) ? opts : []
+    searchList.value = list.map((opt: any) => ({
+      id: opt.id,
+      name: opt.nickname || opt.title || '',
+      phone: opt.mobile || opt.phone || '',
+    }))
+    searchHasMore.value = false
+  },
+  { deep: true },
+)
 
 // 发送验证码倒计时
 const countdown = ref(0)
@@ -415,6 +514,21 @@ const isCounting = ref(false)
 let timer: any = null
 
 const sendCode = () => {
+  if (!form.value.mobile) {
+    uni.showToast({
+      title: '请输入手机号',
+      icon: 'none',
+    })
+    return
+  }
+  if (!/^1[3-9]\d{9}$/.test(form.value.mobile)) {
+    uni.showToast({
+      title: '手机号格式不正确',
+      icon: 'none',
+    })
+    return
+  }
+  emit('sendCode', form.value.mobile)
   if (isCounting.value) {
     return
   }
@@ -521,6 +635,22 @@ defineExpose({ validate, getData })
                 :style="{ color: getSelectedLabel(block.field) ? '#333' : '#999' }"
               >
                 {{ getSelectedLabel(block.field) || block.field.placeholder || '' }}
+              </text>
+              <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
+              <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+            </view>
+          </template>
+
+          <template v-else-if="block.field.type === 'select-multiple'">
+            <view class="name-gender-row" @click="openMultiSelectPopup(block.field)">
+              <text v-if="block.field.head" class="input-styles" :style="{ color: '#333' }">
+                {{ block.field.head }}
+              </text>
+              <text
+                class="input-style"
+                :style="{ color: getMultipleSelectedLabel(block.field) ? '#333' : '#999' }"
+              >
+                {{ getMultipleSelectedLabel(block.field) || block.field.placeholder || '' }}
               </text>
               <text v-if="block.field.unit" class="unit">{{ block.field.unit }}</text>
               <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
@@ -679,22 +809,19 @@ defineExpose({ validate, getData })
                 v-for="(option, index) in block.field.options || []"
                 :key="index"
                 class="radio-group-item"
-                :class="{ active: form[block.field.key] === option.value }"
+                :class="{ active: form[block.field.key] === option.id }"
                 @click="
-                  ;(form[block.field.key] = option.value),
-                    emit('fieldChange', block.field.key, option.value)
+                  ;(form[block.field.key] = option.id),
+                    emit('fieldChange', block.field.key, option.id)
                 "
               >
                 <view
                   class="radio-group-circle"
-                  :class="{ checked: form[block.field.key] === option.value }"
+                  :class="{ checked: form[block.field.key] === option.id }"
                 >
-                  <view
-                    v-if="form[block.field.key] === option.value"
-                    class="radio-group-inner"
-                  ></view>
+                  <view v-if="form[block.field.key] === option.id" class="radio-group-inner"></view>
                 </view>
-                <text class="radio-group-label">{{ option.label }}</text>
+                <text class="radio-group-label">{{ option.title }}</text>
               </view>
             </view>
           </template>
@@ -848,6 +975,22 @@ defineExpose({ validate, getData })
               </view>
             </template>
 
+            <template v-else-if="field.type === 'select-multiple'">
+              <view class="name-gender-row" @click="openMultiSelectPopup(field)">
+                <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
+                  {{ field.head }}
+                </text>
+                <text
+                  class="input-style"
+                  :style="{ color: getMultipleSelectedLabel(field) ? '#333' : '#999' }"
+                >
+                  {{ getMultipleSelectedLabel(field) || field.placeholder || '' }}
+                </text>
+                <text v-if="field.unit" class="unit">{{ field.unit }}</text>
+                <image class="arrow-icon" src="/static/house/right.png" mode="aspectFit"></image>
+              </view>
+            </template>
+
             <template v-else-if="field.type === 'selectSearch'">
               <view class="name-gender-row" @click="openSearchPopup(field)">
                 <text v-if="field.head" class="input-styles" :style="{ color: '#333' }">
@@ -994,18 +1137,16 @@ defineExpose({ validate, getData })
                   v-for="(option, index) in field.options || []"
                   :key="index"
                   class="radio-group-item"
-                  :class="{ active: form[field.key] === option.value }"
-                  @click="
-                    ;(form[field.key] = option.value), emit('fieldChange', field.key, option.value)
-                  "
+                  :class="{ active: form[field.key] === option.id }"
+                  @click=";(form[field.key] = option.id), emit('fieldChange', field.key, option.id)"
                 >
                   <view
                     class="radio-group-circle"
-                    :class="{ checked: form[field.key] === option.value }"
+                    :class="{ checked: form[field.key] === option.id }"
                   >
-                    <view v-if="form[field.key] === option.value" class="radio-group-inner"></view>
+                    <view v-if="form[field.key] === option.id" class="radio-group-inner"></view>
                   </view>
-                  <text class="radio-group-label">{{ option.label }}</text>
+                  <text class="radio-group-label">{{ option.title }}</text>
                 </view>
               </view>
             </template>
@@ -1084,10 +1225,10 @@ defineExpose({ validate, getData })
               v-for="(option, index) in currentField?.options || []"
               :key="index"
               class="option-item"
-              :class="{ active: tempSelectedValue === option.value }"
+              :class="{ active: tempSelectedValue === option.id }"
               @click="selectOption(option)"
             >
-              <text class="option-text">{{ option.label }}</text>
+              <text class="option-text">{{ option.title }}</text>
             </view>
           </view>
         </scroll-view>
@@ -1096,6 +1237,36 @@ defineExpose({ validate, getData })
             <text class="btn-text">关闭</text>
           </view>
           <view class="footer-btn confirm" @click="confirmSelect">
+            <text class="btn-text">确认</text>
+          </view>
+        </view>
+      </view>
+    </uni-popup>
+
+    <!-- uni-popup 多选弹窗 -->
+    <uni-popup ref="multiPopupRef" safe-area type="bottom" background-color="#fff">
+      <view class="popup-container">
+        <view class="popup-header">
+          <text class="popup-title">{{ currentMultiField?.placeholder || '请选择' }}</text>
+        </view>
+        <scroll-view scroll-y class="popup-content">
+          <view class="options-grid">
+            <view
+              v-for="(option, index) in currentMultiField?.options || []"
+              :key="index"
+              class="option-item"
+              :class="{ active: tempSelectedValues.includes(option.id) }"
+              @click="toggleMultiOption(option)"
+            >
+              <text class="option-text">{{ option.title }}</text>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="popup-footer">
+          <view class="footer-btn cancel" @click="closeMultiPopup">
+            <text class="btn-text">关闭</text>
+          </view>
+          <view class="footer-btn confirm" @click="confirmMultiSelect">
             <text class="btn-text">确认</text>
           </view>
         </view>

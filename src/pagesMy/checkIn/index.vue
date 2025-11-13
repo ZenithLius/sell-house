@@ -11,7 +11,7 @@
         mode="aspectFit"
       ></image>
     </view>
-    <view class="title" :style="{ top: safeAreaInsets!.top +20 + 'px' }">员工打卡</view>
+    <view class="title" :style="{ top: safeAreaInsets!.top +20 + 'px' }">{{ topTitle }}</view>
 
     <view class="checkRecord">
       <view class="left">打卡记录</view>
@@ -32,7 +32,9 @@
       :list="checkInList"
       :loading="listLoading"
       :hasMore="hasMore"
+      :refreshing="refreshing"
       @loadMore="loadMore"
+      @refresh="handleRefresh"
     />
 
     <!-- 日期选择器 -->
@@ -50,6 +52,8 @@
 import { ref, computed } from 'vue'
 import DatePicker from './components/DatePicker.vue'
 import CheckInList from './components/CheckInList.vue'
+import { checkInListAPI, type CheckInItem } from '../services/staff'
+import { onShow } from '@dcloudio/uni-app'
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
@@ -66,70 +70,14 @@ const selectedDate = computed(() => {
   return `${currentYear.value}.${currentMonth.value}`
 })
 
-// 打卡次数（这里是模拟数据，实际应该从接口获取）
-const checkCount = ref(10000000)
-
 // 打卡记录列表数据
-const checkInList = ref([
-  {
-    id: 1,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 2,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 3,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 4,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 5,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 4,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 5,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 4,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-  {
-    id: 5,
-    name: '员工姓名',
-    time: '2025.09.01 10:00:00',
-    image: 'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-  },
-])
+const checkInList = ref<CheckInItem[]>([])
 
 const listLoading = ref(false)
 const hasMore = ref(true)
 const currentPage = ref(1)
+const refreshing = ref(false)
+const perPage = 10
 
 // 显示日期选择器
 const showDatePicker = () => {
@@ -146,11 +94,21 @@ const handleCheck = () => {
 const handleDateConfirm = (year: number, month: number) => {
   currentYear.value = year
   currentMonth.value = month
-  // TODO: 根据选中的年月，调用接口获取打卡次数和记录列表
-  console.log('选中的日期：', year, month)
   // 重置列表
+  resetList()
+}
+
+/**
+ * ==========================================================================
+ *                                 @异步请求
+ * ==========================================================================
+ */
+
+// 重置列表
+const resetList = () => {
   currentPage.value = 1
   checkInList.value = []
+  hasMore.value = true
   loadCheckInList()
 }
 
@@ -159,24 +117,36 @@ const loadCheckInList = async () => {
   if (listLoading.value) return
   listLoading.value = true
 
-  // TODO: 调用接口获取数据
-  // 模拟接口请求
-  setTimeout(() => {
-    const mockData = Array.from({ length: 10 }, (_, i) => ({
-      id: currentPage.value * 10 + i + 1,
-      name: '员工姓名',
-      time: '2025.09.01 10:00:00',
-      image: 'https://via.placeholder.com/120',
-    }))
+  try {
+    const res = await checkInListAPI({
+      month: `${currentYear.value}-${currentMonth.value}`,
+      type: currentType.value, //1 员工 2 经理
+      page: currentPage.value,
+      per_page: perPage,
+    })
 
-    checkInList.value = [...checkInList.value, ...mockData]
-    listLoading.value = false
+    if (res.code === 200) {
+      const newList = res.data.list || []
+      if (currentPage.value === 1) {
+        checkInList.value = newList
+        checkCount.value = res.data.total as number
+      } else {
+        checkInList.value = [...checkInList.value, ...newList]
+      }
 
-    // 模拟没有更多数据
-    if (currentPage.value >= 3) {
-      hasMore.value = false
+      if (newList.length < perPage) {
+        hasMore.value = false
+      }
     }
-  }, 500)
+  } catch (error) {
+    console.error('加载打卡记录失败：', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none',
+    })
+  } finally {
+    listLoading.value = false
+  }
 }
 
 // 加载更多
@@ -186,9 +156,54 @@ const loadMore = () => {
   loadCheckInList()
 }
 
+// 下拉刷新
+const handleRefresh = async () => {
+  refreshing.value = true
+  currentPage.value = 1
+  hasMore.value = true
+
+  try {
+    const res = await checkInListAPI({
+      month: `${currentYear.value}-${currentMonth.value}`,
+      type: currentType.value,
+      page: 1,
+      per_page: perPage,
+    })
+
+    if (res.code === 200) {
+      checkInList.value = res.data.list || []
+      checkCount.value = res.data.total as number
+
+      if ((res.data.list || []).length < perPage) {
+        hasMore.value = false
+      }
+    }
+  } catch (error) {
+    console.error('刷新失败：', error)
+  } finally {
+    refreshing.value = false
+  }
+}
+
 const handleBack = () => {
   uni.navigateBack()
 }
+
+const checkCount = ref(0)
+const currentType = ref('1')
+const topTitle = ref('员工打卡')
+onShow(() => {
+  const currentRole = uni.getStorageSync('currentOtherManageType')
+  console.log('当前角色：', currentRole)
+  if (currentRole === 'manager') {
+    currentType.value = '2'
+    topTitle.value = '经理打卡'
+  } else {
+    currentType.value = '1'
+    topTitle.value = '员工打卡'
+  }
+  resetList()
+})
 </script>
 
 <style lang="scss">

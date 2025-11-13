@@ -2,12 +2,13 @@
   <view class="container">
     <!-- 自定义导航栏 -->
     <ShNavbar @back="handleBack" :title="'个人信息'" />
+    <!-- <up-loading-page color="#863FCE" loading-text="提交中..." :loading="loading"></up-loading-page> -->
 
     <scroll-view scroll-y class="scroll-view">
       <!-- 头像区域 -->
       <view class="avatar-section">
         <view class="avatar-wrapper" @tap="chooseAvatar">
-          <image class="avatar" :src="formData.avatar" mode="aspectFill"></image>
+          <image class="avatar" :src="userInfo.avatar" mode="aspectFill"></image>
           <view class="edit-icon-wrapper">
             <image class="edit-icon" src="/static/customers/pen.png" mode="aspectFit"></image>
           </view>
@@ -19,7 +20,7 @@
           <view class="label">姓名</view>
           <view class="name-gender-row">
             <input
-              v-model="formData.name"
+              v-model="userInfo.nickname"
               class="input-style name"
               placeholder="请输入姓名"
               placeholder-class="placeholder"
@@ -31,17 +32,18 @@
         <view class="form-item">
           <view class="label">联系电话</view>
           <input
-            v-model="formData.phone"
+            v-model="userInfo.mobile"
             class="input-style phone"
             placeholder="请输入联系电话"
             placeholder-class="placeholder"
           />
         </view>
+
         <!-- 所属公司 -->
         <view class="form-item">
           <view class="label">所属公司</view>
           <input
-            v-model="formData.company"
+            v-model="userInfo.company_tile"
             class="input-style phone"
             placeholder="请输入所属公司"
             placeholder-class="placeholder"
@@ -57,18 +59,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
+import { ref, reactive } from 'vue'
+import { useUserStore } from '@/stores'
+import { updateUserInfoAPI } from '@/services/user'
+import { getUserInfoAPI } from '@/services/login'
 const handleBack = () => {
   uni.navigateBack()
 }
-// 表单数据
-const formData = ref({
-  avatar: '/static/customers/share.png', // 默认头像
-  name: '',
-  gender: 'male',
-  phone: '',
-  company: '',
+
+// 获取 store 中的用户信息
+const userStore = useUserStore()
+const profileData = userStore.userInfo
+// 用户信息 - 使用本地 ref 并提供默认值
+const userInfo = ref({
+  nickname: profileData?.nickname || '',
+  mobile: profileData?.mobile || '',
+  avatar: profileData?.avatar || '/static/customers/share.png',
+  company_tile: profileData?.company_tile || '',
 })
 
 // 选择头像
@@ -78,24 +85,57 @@ const chooseAvatar = () => {
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success: (res) => {
-      formData.value.avatar = res.tempFilePaths[0]
-      uni.showToast({
-        title: '头像已更新',
-        icon: 'success',
+      const tempFilePath = res.tempFilePaths[0]
+      // 显示上传中提示
+      uni.showLoading({
+        title: '上传中...',
+        mask: true,
+      })
+
+      // 上传图片到服务器
+      uni.uploadFile({
+        url: '/api/uploads',
+        filePath: tempFilePath,
+        name: 'file',
+        success: (uploadRes) => {
+          uni.hideLoading()
+
+          if (uploadRes.statusCode === 200) {
+            const data = JSON.parse(uploadRes.data)
+            console.log('图片上传成功', data)
+            userInfo.value.avatar = data.data.url
+            uni.showToast({
+              title: '头像已更新',
+              icon: 'success',
+            })
+          } else {
+            uni.showToast({
+              title: '上传失败，请重试',
+              icon: 'none',
+            })
+          }
+        },
+        fail: () => {
+          uni.hideLoading()
+          uni.showToast({
+            title: '上传失败，请重试',
+            icon: 'none',
+          })
+        },
       })
     },
   })
 }
 
 // 性别选择
-const onGenderChange = (e: any) => {
-  formData.value.gender = e.detail.value
-}
+// const onGenderChange = (e: any) => {
+//   userInfo.value.gender = e.detail.value
+// }
 
 // 提交表单
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // 表单验证
-  if (!formData.value.name) {
+  if (!userInfo.value.nickname) {
     uni.showToast({
       title: '请输入姓名',
       icon: 'none',
@@ -103,7 +143,7 @@ const handleSubmit = () => {
     return
   }
 
-  if (!formData.value.phone) {
+  if (!userInfo.value.mobile) {
     uni.showToast({
       title: '请输入联系电话',
       icon: 'none',
@@ -111,7 +151,7 @@ const handleSubmit = () => {
     return
   }
 
-  if (!/^1[3-9]\d{9}$/.test(formData.value.phone)) {
+  if (!/^1[3-9]\d{9}$/.test(userInfo.value.mobile)) {
     uni.showToast({
       title: '请输入正确的手机号码',
       icon: 'none',
@@ -119,7 +159,7 @@ const handleSubmit = () => {
     return
   }
 
-  if (!formData.value.company) {
+  if (!userInfo.value.company_tile) {
     uni.showToast({
       title: '请输入所属公司',
       icon: 'none',
@@ -127,18 +167,40 @@ const handleSubmit = () => {
     return
   }
 
-  // TODO: 提交到后端
-  console.log('提交表单:', formData.value)
+  try {
+    uni.showLoading({
+      title: '提交中...',
+      mask: true,
+    })
+    const res = await updateUserInfoAPI(userInfo.value)
+    uni.hideLoading()
+    if (res.code === 200) {
+      const userStore = useUserStore()
+      const user = await getUserInfoAPI()
+      if (user.data) {
+        userStore.setUserInfo(user.data)
+      }
 
-  uni.showToast({
-    title: '提交成功',
-    icon: 'success',
-  })
+      uni.showToast({
+        title: '提交成功',
+        icon: 'success',
+      })
 
-  // 延迟返回上一页
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 1500)
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 100)
+    } else {
+      uni.showToast({
+        title: res.msg || '提交失败',
+        icon: 'none',
+      })
+    }
+  } catch (error) {
+    uni.showToast({
+      title: '提交失败，请重试',
+      icon: 'none',
+    })
+  }
 }
 </script>
 

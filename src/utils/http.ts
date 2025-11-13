@@ -12,7 +12,8 @@
 
 import { useMemberStore } from '@/stores'
 
-const baseURL = 'http://yapi.zihai.cn/mock/1461'
+// TODO: 临时使用 HTTP，等后端修复 HTTPS 证书后改回 HTTPS
+const baseURL = 'http://bmf.app.zihai.shop'
 
 // 添加拦截器
 const httpInterceptor = {
@@ -54,9 +55,10 @@ uni.addInterceptor('uploadFile', httpInterceptor)
  *    3.3 网络错误 -> 提示用户换网络
  */
 type Data<T> = {
-  code: string
+  code: number
   msg: string
   result: T
+  data: T
 }
 // 2.2 添加类型，支持泛型
 export const http = <T>(options: UniApp.RequestOptions) => {
@@ -68,9 +70,8 @@ export const http = <T>(options: UniApp.RequestOptions) => {
       success(res) {
         // 状态码 2xx
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          // 2.1 提取核心数据 res.data
           resolve(res.data as Data<T>)
-        } else if (res.statusCode === 401) {
+        } else if (res.statusCode === 403 || res.statusCode === 401) {
           // 401错误  -> 清理用户信息，跳转到登录页
           const memberStore = useMemberStore()
           memberStore.clearProfile()

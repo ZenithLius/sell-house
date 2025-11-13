@@ -54,7 +54,6 @@ const handleShare = (type: 'wechat' | 'download') => {
   emit('share', type)
 }
 
-// 暴露方法给父组件
 defineExpose({
   open,
   close,
@@ -94,7 +93,6 @@ defineExpose({
   gap: 20rpx;
 }
 
-// 重置按钮样式，使其与 view 样式一致
 .share-button {
   background: transparent;
   border: none;

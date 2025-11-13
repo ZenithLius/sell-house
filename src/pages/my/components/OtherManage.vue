@@ -21,6 +21,8 @@ import staffIcon from '/static/my/staff.png'
 import managerIcon from '/static/my/manager.png'
 import investmentIcon from '/static/my/Investment.png'
 import renovationIcon from '/static/my/renovation.png'
+import { useMemberStore } from '@/stores'
+const memberStore = useMemberStore()
 
 // 管理项配置
 const manageItems = [
@@ -40,7 +42,12 @@ const ROUTE_MAP: Record<string, string> = {
   renovation: '/pagesRenovation/index',
 }
 
+const emit = defineEmits(['login'])
 const handleClick = (type: string) => {
+  if (!memberStore.profile) {
+    emit('login')
+    return
+  }
   uni.setStorage({
     key: 'currentOtherManageType',
     data: type,
@@ -55,13 +62,13 @@ const handleClick = (type: string) => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/uni.scss';
 .other-manage {
   margin: 40rpx 30rpx;
   padding: 32rpx 32rpx 24rpx;
   background: #ffffff;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
-
+  box-shadow: $uni-box-shadow;
   .section-title {
     font-family: Source Han Sans CN;
     font-weight: 400;

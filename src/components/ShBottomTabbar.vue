@@ -33,7 +33,7 @@ interface TabItem {
 const currentTab = ref<TabKey>('myHouse')
 const currentRole = uni.getStorageSync('currentOtherManageType')
 
-// 根据角色动态构建 tabList
+// 根据角色构建不同的底部导航
 const getTabListByRole = () => {
   if (currentRole === 'manager') {
     return [
@@ -103,7 +103,7 @@ const getRouteByTab = (key: TabKey): string => {
 
   const routeMap: Record<TabKey, string> = {
     myHouse: currentRole === 'manager' ? '/pagesMy/manage/index' : '/pagesMy/authentication/index',
-    photo: '/pagesMy/siteInspection/index',
+    photo: '/pagesMy/siteInspection/index', //实勘房源
     calculator: '/pagesMy/calculator/index',
     card: '/pagesMy/checkIn/index',
     pendingReview: '/pagesMy/pendingReview/index',
@@ -126,8 +126,6 @@ onLoad(() => {
   if (currentMyHouseSourceTab) {
     currentTab.value = currentMyHouseSourceTab
   }
-
-  console.log('currentTab.value222', currentTab.value)
 })
 
 onShow(() => {

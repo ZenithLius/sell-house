@@ -35,6 +35,14 @@ const { safeAreaInsets } = uni.getSystemInfoSync()
 import type { CustomFormField } from '@/types/customFormField'
 import { ref } from 'vue'
 
+// （（score*weight）+（score*weight）+...）*最近成交价   测算价格逻辑
+
+/**
+ * ==========================================================================
+ *                                 @异步请求下拉框
+ * ==========================================================================
+ */
+
 const handleBack = () => {
   uni.navigateBack()
 }
@@ -73,11 +81,7 @@ const fields: CustomFormField[] = [
     type: 'select',
     placeholder: '请选择',
     unit: '室',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'communityName',
@@ -85,55 +89,35 @@ const fields: CustomFormField[] = [
     type: 'select',
     placeholder: '请选择',
     unit: '明卫',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'communityName',
     label: '物业等级',
     type: 'select',
     placeholder: '请选择',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'communityName',
     label: '学校等级',
     type: 'select',
     placeholder: '请选择',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'communityName',
     label: '朝向',
     type: 'select',
     placeholder: '请选择',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'communityName',
     label: '得房率',
     type: 'select',
     placeholder: '请选择',
-    options: [
-      { label: '小区1', value: '小区1' },
-      { label: '小区2', value: '小区2' },
-      { label: '小区3', value: '小区3' },
-    ],
+    options: [],
   },
   {
     key: 'area',

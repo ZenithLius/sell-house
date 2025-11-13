@@ -8,6 +8,10 @@ interface MessageItem {
   houseCode: string // 房源编号
   houseName: string // 房源名称
 }
+// 下拉刷新
+const onRefresh = () => {
+  emit('refresh')
+}
 
 const props = defineProps({
   list: {
@@ -22,11 +26,16 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
   itemClick: [item: MessageItem]
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
@@ -55,7 +64,10 @@ const handleViewDetail = (item: MessageItem) => {
     class="message-list"
     scroll-y
     :scroll-top="scrollTop"
+    refresher-enabled
+    :refresher-triggered="refreshing"
     @scrolltolower="handleScrollToLower"
+    @refresherrefresh="onRefresh"
   >
     <view class="list-container">
       <view v-for="item in list" :key="item.id" class="message-item">

@@ -3,13 +3,13 @@
     <ShNavbar
       @back="handleBack"
       v-show="true"
-      :title="'售卖房源'"
+      :title="'员工业绩'"
       :showBack="true"
       class="navbar-fixed"
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +50+ 'px' }">
       <ShSearchBar
-        placeholder="搜索房源名称"
+        placeholder="搜索员工姓名"
         background-color="#fff"
         v-model="searchKeyword"
         @search="handleSearch"
@@ -26,7 +26,9 @@
         :list="salesList"
         :loading="loading"
         :hasMore="hasMore"
+        :refreshing="refreshing"
         @loadMore="handleLoadMore"
+        @refresh="handleRefresh"
         @itemClick="handleItemClick"
       />
 
@@ -36,8 +38,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import SalesRecordList from './components/SalesRecordList.vue'
+import { getPerformanceListAPI } from '../services/manage'
+import { onLoad } from '@dcloudio/uni-app'
 
 interface PerformanceItem {
   id: string | number
@@ -64,6 +68,7 @@ const staffDateRange = ref({
 // 列表数据
 const salesList = ref<PerformanceItem[]>([])
 const loading = ref(false)
+const refreshing = ref(false)
 const hasMore = ref(true)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -79,9 +84,20 @@ const handleSearch = () => {
 // 日期筛选
 const handleStaffDateChange = (startDate: string, endDate: string) => {
   console.log('日期范围:', startDate, endDate)
+
   currentPage.value = 1
   salesList.value = []
   loadData()
+}
+
+// 下拉刷新
+const handleRefresh = async () => {
+  refreshing.value = true
+  currentPage.value = 1
+  salesList.value = []
+  hasMore.value = true
+  await loadData()
+  refreshing.value = false
 }
 
 // 加载更多
@@ -106,49 +122,36 @@ const loadData = async () => {
   loading.value = true
 
   try {
-    // TODO: 替换为实际的API调用
-    // const res = await api.getPerformanceList({
-    //   page: currentPage.value,
-    //   pageSize: pageSize.value,
-    //   keyword: searchKeyword.value,
-    //   startDate: staffDateRange.value.startDate,
-    //   endDate: staffDateRange.value.endDate,
-    // })
+    const params = {
+      start_time: staffDateRange.value.startDate,
+      end_time: staffDateRange.value.endDate,
+      keyword: searchKeyword.value,
+      page: currentPage.value,
+      page_size: pageSize.value,
+    }
+    const res = await getPerformanceListAPI(params)
+    console.log('员工业绩列表数据=================', res)
 
-    // 模拟数据
-    setTimeout(() => {
-      const names = [
-        '张三',
-        '李四',
-        '王五',
-        '赵六',
-        '钱七',
-        '孙八',
-        '周九',
-        '吴十',
-        '郑十一',
-        '王十二',
-      ]
-      const mockData: PerformanceItem[] = Array.from({ length: 10 }, (_, i) => ({
-        id: currentPage.value * 10 + i,
-        name: names[i] || `员工${currentPage.value * 10 + i}`,
-        salesCount: Math.floor(50 + Math.random() * 150),
-        totalAmount: 100000 + Math.random() * 200000,
-      }))
+    if (res.code === 200) {
+      const newData = res.data.list as any
 
+      // 第一页替换数据，其他页拼接数据
       if (currentPage.value === 1) {
-        salesList.value = mockData
+        salesList.value = newData
       } else {
-        salesList.value.push(...mockData)
+        salesList.value.push(...newData)
       }
 
-      // 模拟没有更多数据
-      if (currentPage.value >= 3) {
-        hasMore.value = false
-      }
+      // 判断是否还有更多数据
+      hasMore.value = newData.length >= pageSize.value
+    } else {
+      uni.showToast({
+        title: res.msg || '加载失败',
+        icon: 'none',
+      })
+    }
 
-      loading.value = false
-    }, 500)
+    loading.value = false
   } catch (error) {
     console.error('加载数据失败:', error)
     loading.value = false
@@ -159,7 +162,7 @@ const loadData = async () => {
   }
 }
 
-onMounted(() => {
+onLoad(() => {
   loadData()
 })
 </script>

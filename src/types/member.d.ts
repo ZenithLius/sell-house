@@ -8,12 +8,14 @@ type BaseProfile = {
   account: string
   /** 昵称 */
   nickname?: string
+  /** 所属公司 */
+  company_tile?: string
+  /** 手机号 */
+  mobile: string
 }
 
 /** 小程序登录 登录用户信息 */
 export type LoginResult = BaseProfile & {
-  /** 手机号 */
-  mobile: string
   /** 登录凭证 */
   token: string
 }
@@ -43,4 +45,21 @@ export type ProfileParams = Pick<
   cityCode?: string
   /** 区/县编码 */
   countyCode?: string
+}
+
+/** 更新用户信息请求参数 */
+export type UpdateUserInfoParams = {
+  /** 头像 */
+  avatar: string
+  /** 姓名 */
+  nickname: string
+  /** 公司名称 */
+  company_tile: string
+  /** 电话 */
+  mobile: string
+}
+
+/** 用户信息 (getUserInfoAPI 返回) */
+export type UserInfo = {
+  [key: string]: any
 }

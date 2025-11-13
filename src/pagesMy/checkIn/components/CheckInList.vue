@@ -2,20 +2,27 @@
   <scroll-view
     class="checkin-list"
     scroll-y
+    refresher-enabled
+    :refresher-triggered="refreshing"
     :scroll-top="scrollTop"
     @scrolltolower="handleScrollToLower"
+    @refresherrefresh="handleRefresh"
   >
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="checkin-item">
+      <view v-for="item in list" :key="item.user_id" class="checkin-item">
         <!-- 左侧内容 -->
         <view class="item-content">
-          <text class="item-name">{{ item.name }}</text>
-          <text class="item-time">{{ item.time }}</text>
+          <text class="item-name">{{ item.user_name }}</text>
+          <text class="item-time">{{ item.created_time }}</text>
         </view>
 
         <!-- 右侧图片 -->
-        <view class="image-wrapper">
-          <image class="checkin-image" :src="item.image" mode="aspectFill" />
+        <view class="image-wrapper" @tap="previewImage(item.pic_url)">
+          <image class="checkin-image" :src="getFirstImage(item.pic_url)" mode="aspectFill" />
+          <!-- 多图角标 -->
+          <view v-if="getImageCount(item.pic_url) > 1" class="image-count">
+            <text class="count-text">{{ getImageCount(item.pic_url) }}</text>
+          </view>
         </view>
       </view>
 
@@ -42,10 +49,10 @@
 import { ref } from 'vue'
 
 interface CheckInItem {
-  id: string | number
-  name: string // 员工姓名
-  time: string // 打卡时间
-  image: string // 打卡图片
+  user_id: string | number
+  user_name: string // 员工姓名
+  created_time: string // 打卡时间
+  pic_url: string // 打卡图片
 }
 
 const props = defineProps({
@@ -61,14 +68,43 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
 const isLoadingMore = ref(false)
+
+// 获取第一张图片
+const getFirstImage = (picUrl: string) => {
+  if (!picUrl) return ''
+  return picUrl.split(',')[0]
+}
+
+// 获取图片数量
+const getImageCount = (picUrl: string) => {
+  if (!picUrl) return 0
+  return picUrl.split(',').filter((url) => url.trim()).length
+}
+
+// 预览图片
+const previewImage = (picUrl: string) => {
+  if (!picUrl) return
+  const imageList = picUrl.split(',').filter((url) => url.trim())
+  if (imageList.length === 0) return
+
+  uni.previewImage({
+    urls: imageList,
+    current: 0,
+  })
+}
 
 // 触底加载
 const handleScrollToLower = () => {
@@ -80,6 +116,11 @@ const handleScrollToLower = () => {
   setTimeout(() => {
     isLoadingMore.value = false
   }, 500)
+}
+
+// 下拉刷新
+const handleRefresh = () => {
+  emit('refresh')
 }
 </script>
 
@@ -133,17 +174,38 @@ const handleScrollToLower = () => {
 
 // 图片容器
 .image-wrapper {
+  position: relative;
   width: 138rpx;
   height: 138rpx;
   border-radius: 14rpx;
   overflow: hidden;
   flex-shrink: 0;
   margin-left: 24rpx;
+  cursor: pointer;
 }
 
 .checkin-image {
   width: 100%;
   height: 100%;
+}
+
+// 图片数量角标
+.image-count {
+  position: absolute;
+  bottom: 8rpx;
+  right: 8rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20rpx;
+  padding: 4rpx 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.count-text {
+  font-size: 20rpx;
+  color: #ffffff;
+  line-height: 1;
 }
 
 .loading-wrapper {

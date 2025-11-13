@@ -4,38 +4,43 @@
       @back="handleBack"
       :home="true"
       v-show="true"
-      :title="'投资人'"
+      :title="isRegister ? '投资人' : '身份认证'"
       :showBack="true"
       class="navbar-fixed"
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
-      <InvestorHeader
-        :userName="'张三'"
-        :totalRevenue="10000.0"
-        :totalInvestment="5000.0"
-        :balance="200.0"
-        @detail="handleDetail"
-      />
-      <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
-
-      <WithdrawRecordList
-        v-if="activeTab === 'notice'"
-        :list="withdrawList"
-        :loading="loading"
-        :hasMore="hasMore"
-        @loadMore="loadMoreWithdrawRecords"
-        @itemClick="handleRecordClick"
-      />
-      <view class="table-list" v-else-if="activeTab === 'good-news'">
-        <ShLabelHomeList
-          :list="staffList"
-          :loading="staffListLoading"
-          :has-more="staffHasMore"
-          :actions="currentStaffActions"
-          @load-more="handleStaffLoadMore"
-          @item-click="handleStaffItemClick"
-          @action="handleStaffAction"
+      <view class="not-register" v-if="!isRegister">
+        <ShAuthRegisterSection :type="type" @view-agreement="handleViewAgreement" />
+      </view>
+      <view v-if="isRegister">
+        <InvestorHeader
+          :userName="'张三'"
+          :totalRevenue="10000.0"
+          :totalInvestment="5000.0"
+          :balance="200.0"
+          @detail="handleDetail"
         />
+        <ShCustomTabs v-model="activeTab" :tabs="tabs" @change="handleTabChange" />
+
+        <WithdrawRecordList
+          v-if="activeTab === 'notice'"
+          :list="withdrawList"
+          :loading="loading"
+          :hasMore="hasMore"
+          @loadMore="loadMoreWithdrawRecords"
+          @itemClick="handleRecordClick"
+        />
+        <view class="table-list" v-else-if="activeTab === 'good-news'">
+          <ShLabelHomeList
+            :list="staffList"
+            :loading="staffListLoading"
+            :has-more="staffHasMore"
+            :actions="currentStaffActions"
+            @load-more="handleStaffLoadMore"
+            @item-click="handleStaffItemClick"
+            @action="handleStaffAction"
+          />
+        </view>
       </view>
     </view>
     <ShPopup
@@ -53,10 +58,33 @@
 import InvestorHeader from './components/InvestorHeader.vue'
 import WithdrawRecordList from './components/WithdrawRecordList.vue'
 import type { StaffAuthItem } from '@/components/ShLabelHomeList.vue'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import ShPopup from '@/components/ShPopup.vue'
 import type { CustomFormField } from '@/types/customFormField'
-// ===================================================
+import ShAuthRegisterSection from '@/components/ShAuthRegisterSection.vue'
+
+/**
+ * ==========================================================================
+ *                                 @认证相关
+ * ==========================================================================
+ */
+import { useUserStore } from '@/stores'
+const userStore = useUserStore()
+
+const isRegister = computed(() => {
+  return userStore.userInfo?.is_investor === 1
+})
+
+const type = ref('investment')
+const handleViewAgreement = () => {
+  console.log('查看协议')
+}
+
+/**
+ * ==========================================================================
+ *                                 @认证相关结束
+ * ==========================================================================
+ */
 
 const addFeePopup = ref<InstanceType<typeof ShPopup> | null>(null)
 
@@ -72,8 +100,8 @@ const fields: CustomFormField[] = [
     label: 'none',
     type: 'radio-group',
     options: [
-      { label: '审核通过', value: 'approved' },
-      { label: '审核驳回', value: 'rejected' },
+      { title: '审核通过', id: 'approved' },
+      { title: '审核驳回', id: 'rejected' },
     ],
   },
   {
@@ -86,13 +114,11 @@ const fields: CustomFormField[] = [
 ]
 // 弹窗取消
 const handlePopupCancel = () => {
-  console.log('取消添加费用')
+  console.log('取消上架1111111111111111')
 }
 // 弹窗确认
 const handlePopupConfirm = () => {
-  console.log('确认添加费用')
-  // TODO: 这里添加表单验证和提交逻辑
-  // 提交成功后关闭弹窗
+  console.log('确认上架========================')
   addFeePopup.value?.close()
 }
 
@@ -233,8 +259,8 @@ interface WithdrawRecord {
 
 // Tab 配置
 const tabs = [
-  { label: '提现记录', value: 'notice', badge: false },
-  { label: '房源列表', value: 'good-news', badge: false },
+  { title: '提现记录', id: 'notice', badge: false },
+  { title: '房源列表', id: 'good-news', badge: false },
 ]
 const activeTab = ref('notice')
 const handleTabChange = (value: string) => {

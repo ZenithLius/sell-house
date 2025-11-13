@@ -12,8 +12,10 @@
         :list="messageList"
         :loading="loading"
         :hasMore="hasMore"
+        :refreshing="refreshing"
         @loadMore="loadMoreMessages"
         @itemClick="handleItemClick"
+        @refresh="onRefresh"
       />
     </view>
   </view>
@@ -22,7 +24,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import MessageList from './components/MessageList.vue'
+import { getMessageListAPI, type MessageItem as ApiMessageItem } from '@/services/my'
 
+// 前端展示用的消息项类型
 interface MessageItem {
   id: string | number
   title: string
@@ -36,177 +40,60 @@ const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 
+// 将 API 数据转换为前端展示格式
+const transformToMessageItem = (apiItem: ApiMessageItem): MessageItem => {
+  return {
+    id: apiItem.house_list_id || apiItem.created_at || '',
+    title: '房源危险池通知',
+    date: apiItem.create_time || apiItem.created_at || '',
+    houseCode: apiItem.house_code || '',
+    houseName: `${apiItem.pharmacist_title || ''} ${apiItem.house_list_title || ''} ${
+      apiItem.exposure_house_title || ''
+    } ${apiItem.decoration_house_title || ''}`.trim(),
+  }
+}
+const refreshing = ref(false)
+
+// 下拉刷新
+const onRefresh = async () => {
+  refreshing.value = true
+  page.value = 1
+  await loadMessages()
+  refreshing.value = false
+}
+
 // 加载消息列表
 const loadMessages = async () => {
   if (loading.value) return
 
   loading.value = true
   try {
-    // const res = await uni.request({
-    //   url: '/api/message/list',
-    //   data: { page: page.value, pageSize: 10 }
-    // })
+    // 调用后台接口获取消息列表
+    const res = await getMessageListAPI({
+      page: page.value,
+      per_page: 10,
+    })
 
-    // 模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const mockData: MessageItem[] = [
-      {
-        id: 1,
-        title: '房源危险池通知',
-        date: '2025.09.02',
-        houseCode: '123456',
-        houseName: '未央区 天朗御湖1-1-603西南朝向 精装三室一厅...',
-      },
-      {
-        id: 2,
-        title: '房源危险池通知',
-        date: '2025.09.02',
-        houseCode: '123456',
-        houseName: '未央区 天朗御湖1-1-603西南朝向 精装三室一厅...',
-      },
-      {
-        id: 3,
-        title: '房源危险池通知',
-        date: '2025.09.02',
-        houseCode: '123456',
-        houseName: '未央区 天朗御湖1-1-603西南朝向 精装三室一厅...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-      {
-        id: 4,
-        title: '房源危险池通知',
-        date: '2025.09.03',
-        houseCode: '789012',
-        houseName: '雁塔区 绿地世纪城2-2-808东南朝向 豪华装修...',
-      },
-      {
-        id: 5,
-        title: '房源危险池通知',
-        date: '2025.09.04',
-        houseCode: '345678',
-        houseName: '高新区 万科金域华府3-1-506南北通透 精装...',
-      },
-    ]
+    console.log('获取消息列表数据=====', res.data)
 
+    // 获取列表数据
+    const list = res.data.dangerList?.list || []
+    const transformedList = list.map(transformToMessageItem)
+
+    // 第一页替换，后续页追加
     if (page.value === 1) {
-      messageList.value = mockData
+      messageList.value = transformedList
     } else {
-      messageList.value.push(...mockData)
+      messageList.value.push(...transformedList)
     }
 
-    // 模拟没有更多数据
-    if (page.value >= 2) {
+    // 判断是否还有更多数据
+    const perPage = res.data.dangerList?.per_page || 10
+    const total = res.data.dangerList?.total || 0
+    const currentPage = res.data.dangerList?.current_page || page.value
+
+    // 如果当前页数据少于每页数量，或者已经加载到最后一页
+    if (list.length < perPage || messageList.value.length >= total) {
       hasMore.value = false
     }
   } catch (error) {
@@ -222,6 +109,7 @@ const loadMessages = async () => {
 
 // 加载更多
 const loadMoreMessages = () => {
+  if (!hasMore.value || loading.value) return
   page.value++
   loadMessages()
 }

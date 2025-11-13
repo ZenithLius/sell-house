@@ -2,10 +2,12 @@
 import { ref } from 'vue'
 
 interface RecordItem {
-  id: string | number
-  time: string // 时间
-  userName: string // 用户名
-  phone: string // 电话号码
+  created_at: string
+  created_time: string
+  id: number
+  mobile: string
+  nickname: string
+  user_id: number
 }
 
 const props = defineProps({
@@ -64,10 +66,10 @@ const handleItemClick = (item: RecordItem) => {
         <!-- 内容区域 -->
         <view class="record-content">
           <!-- 时间 -->
-          <text class="record-time">{{ item.time }}</text>
+          <text class="record-time">{{ item.created_time }}</text>
 
           <!-- 用户信息 -->
-          <text class="record-user">{{ item.userName }} - {{ item.phone }}</text>
+          <text class="record-user">{{ item.nickname }} - {{ item.mobile }}</text>
         </view>
       </view>
 

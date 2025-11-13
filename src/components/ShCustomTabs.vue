@@ -2,34 +2,30 @@
 import { ref } from 'vue'
 
 interface TabItem {
-  label: string
-  value: string
+  title: string
+  id: string | number
   badge?: boolean
 }
 
 const props = defineProps({
   tabs: {
     type: Array as () => TabItem[],
-    default: () => [
-      { label: '公告', value: 'notice', badge: false },
-      { label: '喜报', value: 'good-news', badge: false },
-      { label: '学习天地', value: 'study', badge: false },
-    ],
+    default: () => [],
   },
   modelValue: {
-    type: String,
-    default: 'notice',
+    type: [String, Number],
+    default: '',
   },
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-  change: [value: string]
+  'update:modelValue': [value: string | number]
+  change: [value: string | number]
 }>()
 
 const activeTab = ref(props.modelValue)
 
-const handleTabClick = (value: string) => {
+const handleTabClick = (value: string | number) => {
   activeTab.value = value
   emit('update:modelValue', value)
   emit('change', value)
@@ -40,16 +36,16 @@ const handleTabClick = (value: string) => {
   <view class="consult-tabs">
     <view
       v-for="tab in tabs"
-      :key="tab.value"
+      :key="tab.id"
       class="tab-item"
-      :class="{ active: activeTab === tab.value }"
-      @tap="handleTabClick(tab.value)"
+      :class="{ active: activeTab === tab.id }"
+      @tap="handleTabClick(tab.id)"
     >
       <view class="tab-content">
-        <text class="tab-label">{{ tab.label }}</text>
+        <text class="tab-label">{{ tab.title }}</text>
         <view v-if="tab.badge" class="badge-dot"></view>
       </view>
-      <view v-if="activeTab === tab.value" class="tab-indicator"></view>
+      <view v-if="activeTab === tab.id" class="tab-indicator"></view>
     </view>
   </view>
 </template>

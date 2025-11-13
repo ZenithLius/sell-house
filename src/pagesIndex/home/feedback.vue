@@ -16,18 +16,18 @@
           <view class="label">姓名</view>
           <view class="name-gender-row">
             <input
-              v-model="formData.name"
+              v-model="formData.nickname"
               class="input-style name"
               placeholder="请输入姓名"
               placeholder-class="placeholder"
             />
             <radio-group class="gender-group" @change="onGenderChange">
               <label class="radio-item">
-                <radio value="male" :checked="formData.gender === 'male'" color="#8b5cf6" />
+                <radio value="1" :checked="formData.sex === '1'" color="#8b5cf6" />
                 <text class="radio-text">先生</text>
               </label>
               <label class="radio-item">
-                <radio value="female" :checked="formData.gender === 'female'" color="#8b5cf6" />
+                <radio value="2" :checked="formData.sex === '2'" color="#8b5cf6" />
                 <text class="radio-text">女士</text>
               </label>
             </radio-group>
@@ -38,7 +38,7 @@
         <view class="form-item">
           <view class="label">联系电话</view>
           <input
-            v-model="formData.phone"
+            v-model="formData.mobile"
             class="input-style phone"
             placeholder="请输入联系电话"
             placeholder-class="placeholder"
@@ -68,27 +68,37 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getFeedbackAPI } from '@/services/index/page'
+
+onLoad((option) => {
+  if (option?.id) {
+    formData.value.house_list_id = option.id
+  }
+})
 
 const handleBack = () => {
   uni.navigateBack()
 }
 // 表单数据
 const formData = ref({
-  name: '',
-  gender: 'male',
-  phone: '',
+  nickname: '',
+  sex: '1',
+  mobile: '',
   content: '',
+  house_list_id: '',
 })
 
 // 性别选择
 const onGenderChange = (e: any) => {
-  formData.value.gender = e.detail.value
+  formData.value.sex = e.detail.value
 }
 
 // 提交表单
 const handleSubmit = () => {
+  console.log('提交表单:', formData.value)
   // 表单验证
-  if (!formData.value.name) {
+  if (!formData.value.nickname) {
     uni.showToast({
       title: '请输入姓名',
       icon: 'none',
@@ -96,7 +106,7 @@ const handleSubmit = () => {
     return
   }
 
-  if (!formData.value.phone) {
+  if (!formData.value.mobile) {
     uni.showToast({
       title: '请输入联系电话',
       icon: 'none',
@@ -104,7 +114,7 @@ const handleSubmit = () => {
     return
   }
 
-  if (!/^1[3-9]\d{9}$/.test(formData.value.phone)) {
+  if (!/^1[3-9]\d{9}$/.test(formData.value.mobile)) {
     uni.showToast({
       title: '请输入正确的手机号码',
       icon: 'none',
@@ -120,18 +130,27 @@ const handleSubmit = () => {
     return
   }
 
-  // TODO: 提交到后端
-  console.log('提交表单:', formData.value)
-
-  uni.showToast({
-    title: '提交成功',
-    icon: 'success',
-  })
-
-  // 延迟返回上一页
+  getFeedBackAPIReq(formData.value)
   setTimeout(() => {
     uni.navigateBack()
   }, 1500)
+}
+
+const getFeedBackAPIReq = async (data: any) => {
+  try {
+    const res = await getFeedbackAPI(data)
+    if (res.code === 200) {
+      uni.showToast({
+        title: '提交成功',
+        icon: 'success',
+      })
+    }
+  } catch (error) {
+    uni.showToast({
+      title: '返回信息失败',
+      icon: 'none',
+    })
+  }
 }
 </script>
 

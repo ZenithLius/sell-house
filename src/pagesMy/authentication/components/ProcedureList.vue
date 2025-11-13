@@ -2,15 +2,16 @@
 import { ref } from 'vue'
 const currentRole = uni.getStorageSync('currentOtherManageType')
 interface ProcedureItem {
-  id: string | number
-  status: string // 状态：完结、放款、过户等
-  time: string // 时间
-  remark: string // 备注
+  create_time: string
+  created_at: string
+  remark: string
+  type_id: number
+  type_name: string
 }
 
 const props = defineProps({
   list: {
-    type: Array as () => ProcedureItem[],
+    type: Array as () => any[],
     default: () => [],
   },
   loading: {
@@ -21,15 +22,25 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  isTriggered: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
   itemClick: [item: ProcedureItem]
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
 const isLoadingMore = ref(false)
+
+// 下拉刷新
+const handleRefresh = () => {
+  emit('refresh')
+}
 
 // 触底加载
 const handleScrollToLower = () => {
@@ -54,20 +65,23 @@ const handleItemClick = (item: ProcedureItem) => {
     class="procedure-list"
     :class="{ 'has-bottom-btn': currentRole === 'manager' }"
     scroll-y
+    refresher-enabled
+    :refresher-triggered="isTriggered"
     :scroll-top="scrollTop"
+    @refresherrefresh="handleRefresh"
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">
       <view
         v-for="item in list"
-        :key="item.id"
+        :key="item.type_id"
         class="procedure-item"
         @click="handleItemClick(item)"
       >
         <!-- 状态标题 -->
         <view class="procedure-header">
           <text class="status-label">状态：</text>
-          <text class="status-value">{{ item.status }}</text>
+          <text class="status-value">{{ item.type_name }}</text>
         </view>
 
         <!-- 详情信息 -->
@@ -75,7 +89,7 @@ const handleItemClick = (item: ProcedureItem) => {
           <!-- 时间 -->
           <view class="info-row">
             <text class="info-label">时间：</text>
-            <text class="info-value">{{ item.time }}</text>
+            <text class="info-value">{{ item.create_time }}</text>
           </view>
 
           <!-- 备注 -->

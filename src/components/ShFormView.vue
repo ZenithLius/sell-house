@@ -26,7 +26,6 @@ const fieldVisible = (field: FieldConfig) => {
 // 过滤可展示字段
 const renderFields = computed(() => props.fields.filter((f) => fieldVisible(f)))
 
-// 分组成网格，保持和编辑表单一致的栅格布局
 const renderBlocks = computed(() => {
   const blocks: Array<{ cols: number; fields: FieldConfig[] }> = []
   const list = renderFields.value
@@ -75,8 +74,8 @@ const getGridTemplate = (block: { cols: number; fields: FieldConfig[] }) => {
 
 const getSelectedLabel = (field: FieldConfig) => {
   const val = (form.value as any)[field.key]
-  const opt = field.options?.find((o) => o.value === val)
-  return opt?.label ?? ''
+  const opt = field.options?.find((o) => o.id === val)
+  return opt?.title ?? ''
 }
 
 // 图片预览（upload、idCard）
@@ -219,18 +218,18 @@ const previewIdCard = (imagePath: string) => {
                 v-for="(option, index) in field.options || []"
                 :key="index"
                 class="radio-group-item"
-                :class="{ active: (form as any)[field.key] === option.value }"
+                :class="{ active: (form as any)[field.key] === option.id }"
               >
                 <view
                   class="radio-group-circle"
-                  :class="{ checked: (form as any)[field.key] === option.value }"
+                  :class="{ checked: (form as any)[field.key] === option.id }"
                 >
                   <view
-                    v-if="(form as any)[field.key] === option.value"
+                    v-if="(form as any)[field.key] === option.id"
                     class="radio-group-inner"
                   ></view>
                 </view>
-                <text class="radio-group-label">{{ option.label }}</text>
+                <text class="radio-group-label">{{ option.title }}</text>
               </view>
             </view>
           </template>
@@ -443,6 +442,7 @@ const previewIdCard = (imagePath: string) => {
     background-color: #f7f7f7;
     border-radius: 18rpx;
     gap: 24rpx;
+    margin-bottom: 30rpx;
   }
 
   .upload-item {

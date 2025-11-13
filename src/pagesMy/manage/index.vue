@@ -1,24 +1,31 @@
 <template>
-  <view class="container">
+  <view class="container" :style="{ background: isRegister ? '#f5f5f5' : '#ffffff' }">
     <ShNavbar
       @back="handleBack"
       v-show="true"
-      :title="'片区经理'"
+      :title="isRegister ? '片区经理' : '身份认证'"
       :showBack="true"
       class="navbar-fixed"
     />
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
-      <view v-if="currentDisplay === 'list'" class="drawer-search">
-        <ShSearchBar placeholder="搜索房源名称" background-color="#fff" />
+      <AuthRegisterSection v-if="!isRegister" :type="type" @view-agreement="handleViewAgreement" />
+
+      <view v-if="currentDisplay === 'list' && isRegister" class="drawer-search">
+        <ShSearchBar
+          @clickButton="handleClickButton"
+          placeholder="搜索房源名称"
+          background-color="#fff"
+        />
       </view>
-      <FilterSelect
-        v-if="currentDisplay === 'list'"
+      <ShFilterSelect
+        v-if="currentDisplay === 'list' && isRegister"
         v-model="staffFilters"
         :filters="staffFilterConfigs"
         @close="handleStaffFilterClose"
+        ref="filterSelectRef"
       />
       <ShDateFilter
-        v-if="currentDisplay === 'performance'"
+        v-if="currentDisplay === 'performance' && isRegister"
         :showLabel="false"
         v-model:start-date="staffDateRange.startDate"
         v-model:end-date="staffDateRange.endDate"
@@ -26,13 +33,16 @@
       />
 
       <StaffAuthList
+        v-if="isRegister"
+        :height-offset="500"
         :list="staffList"
         :loading="staffListLoading"
         :has-more="staffHasMore"
-        :actions="currentStaffActions"
+        :refreshing="staffRefreshing"
         @load-more="handleStaffLoadMore"
         @item-click="handleStaffItemClick"
         @action="handleStaffAction"
+        @refresh="handleStaffRefresh"
       />
 
       <ShPopup
@@ -44,7 +54,7 @@
         <ShCustomForm v-model="formData" :fields="fields" />
       </ShPopup>
     </view>
-    <ShBottomTabbar />
+    <ShBottomTabbar v-if="isRegister" />
   </view>
 </template>
 
@@ -52,16 +62,173 @@
 const { safeAreaInsets } = uni.getSystemInfoSync()
 import { onLoad } from '@dcloudio/uni-app'
 import FilterSelect from './components/FilterSelect.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { FilterConfig } from '@/types/filter'
-import StaffAuthList from './components/StaffAuthList.vue'
+import StaffAuthList from '../authentication/components/StaffAuthList.vue'
 import type { StaffAuthItem } from './types'
 import ShPopup from '@/components/ShPopup.vue'
-const staffFilters = ref<Record<number, string | number | Record<string, string | number>>>({})
+import { getShelfExamineAPI } from '../services/manage'
+
+import AuthRegisterSection from '@/pagesMy/authentication/components/AuthRegisterSection.vue'
+// 定义过滤器值的类型
+const staffFilters = ref<any>({})
 
 const addFeePopup = ref<InstanceType<typeof ShPopup> | null>(null)
 
 import type { CustomFormField } from '@/types/customFormField'
+import { getHouseListAPI, getStaffListAPI } from '../services/manage'
+
+/**
+ * ==========================================================================
+ *                                 @认证相关
+ * ==========================================================================
+ */
+import { useUserStore } from '@/stores'
+const userStore = useUserStore()
+
+const isRegister = computed(() => {
+  return userStore.userInfo?.is_district_manager === 1
+})
+
+const type = ref('manager')
+
+const handleViewAgreement = () => {
+  console.log('查看协议')
+}
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+const houseParams = ref({
+  keyword: '',
+  type: '',
+  start_time: '',
+  end_time: '',
+  next_user_id: '',
+  next_type: '',
+  put_type: '',
+  sale_type: '',
+  page: 1,
+  per_page: 10,
+})
+
+const keyword = ref('')
+
+const filterSelectRef = ref<InstanceType<typeof FilterSelect> | null>(null)
+const handleClickButton = (value: string) => {
+  keyword.value = value
+  houseParams.value.keyword = value
+  houseParams.value.page = 1
+  getHouseListReq()
+  filterSelectRef.value?.close()
+}
+
+/**
+ * ==================================获取下属员工========================================
+ */
+const getStaffListReq = async () => {
+  const res = await getStaffListAPI({ keyword: '', page: 1, per_page: 1000 })
+  const target = staffFilterConfigs.value.find((f) => f.label === '下属员工')
+  if (target) {
+    target.options = res.data.list.map((item: any) => ({
+      id: item.id,
+      title: `${item.nickname}-${item.mobile}`,
+    }))
+  }
+  if (res.code === 200) {
+    staffList.value = res.data as any
+  }
+}
+
+/**
+ * ==================================获取房源列表========================================
+ */
+
+// staffFilters.value
+// 房源列表
+const getHouseListReq = async () => {
+  if (staffListLoading.value) return
+
+  const filter2 = staffFilters.value[2]
+  const filter0 = staffFilters.value[0]
+  const filter1 = staffFilters.value[1]
+
+  houseParams.value.keyword = keyword.value
+  houseParams.value.type =
+    (typeof filter2 === 'object' && filter2 !== null && 'type' in filter2 ? filter2.type : '') || ''
+  houseParams.value.next_user_id = (filter0 !== null ? filter0 : '') || ''
+  houseParams.value.next_type = (filter1 !== null ? filter1 : '') || ''
+  houseParams.value.put_type =
+    (typeof filter2 === 'object' && filter2 !== null && 'put_type' in filter2
+      ? filter2.put_type
+      : '') || ''
+  houseParams.value.sale_type =
+    (typeof filter2 === 'object' && filter2 !== null && 'sale_type' in filter2
+      ? filter2.sale_type
+      : '') || ''
+
+  staffListLoading.value = true
+  try {
+    uni.showLoading({
+      title: '加载中',
+    })
+    const res = await getHouseListAPI(houseParams.value)
+    uni.hideLoading()
+
+    if (res.code === 200 && res.data) {
+      const { list: houseData, current_page, per_page } = res.data
+
+      if (houseParams.value.page === 1) {
+        staffList.value = houseData
+      } else {
+        staffList.value.push(...houseData)
+      }
+
+      staffHasMore.value = houseData.length >= per_page
+      houseParams.value.page = current_page
+    } else {
+      uni.showToast({
+        title: res.msg || '加载失败',
+        icon: 'none',
+      })
+    }
+  } catch (error) {
+    console.error('加载房源列表失败:', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none',
+    })
+  } finally {
+    staffListLoading.value = false
+  }
+}
+
+/**
+ * ==================================上架审核========================================
+ */
+
+const shelfExamineReq = async () => {
+  const res = await getShelfExamineAPI({
+    id: currentSelect.value.audit_record_id, //审核列表返回的id，正常房源列表返回的audit_record_id
+    status: formData.value.auditStatus === 'approved' ? 1 : 2, //TODO
+    remark: formData.value.remark,
+    house_list_id: currentSelect.value.id,
+    originally_id: currentSelect.value.originally_id,
+    type: 1, // 固定是1
+  })
+}
+
+// 弹窗取消
+const handlePopupCancel = () => {
+  console.log('取消添加费用')
+}
+// 弹窗确认
+const handlePopupConfirm = () => {
+  addFeePopup.value?.close()
+}
 
 // 日期筛选
 const staffDateRange = ref({
@@ -70,7 +237,6 @@ const staffDateRange = ref({
 })
 const handleStaffDateChange = (startDate: string, endDate: string) => {
   console.log('员工日期范围:', startDate, endDate)
-  // TODO: 执行日期筛选逻辑
 }
 
 const currentDisplay = ref<'list' | 'performance'>('list')
@@ -79,15 +245,15 @@ onLoad((options) => {
   if (options?.id) {
     currentDisplay.value = 'performance'
   }
-
-  console.log('options=============', options)
+  // 获取下属员工
+  getStaffListReq()
+  // 房源列表
+  getHouseListReq()
 })
 
 const formData = ref({
-  area: '',
-  feeName: '',
-  feeAmount: '',
-  idCard: '',
+  auditStatus: '',
+  remark: '',
 })
 
 const fields: CustomFormField[] = [
@@ -96,31 +262,18 @@ const fields: CustomFormField[] = [
     label: 'none',
     type: 'radio-group',
     options: [
-      { label: '审核通过', value: 'approved' },
-      { label: '审核驳回', value: 'rejected' },
+      { title: '审核通过', id: 'approved' },
+      { title: '审核驳回', id: 'rejected' },
     ],
   },
   {
-    key: 'feeName',
+    key: 'remark',
     label: 'none',
     placeholder: '描述你的问题',
     type: 'textarea',
     visible: (form) => form.auditStatus === 'rejected',
   },
 ]
-
-// 弹窗取消
-const handlePopupCancel = () => {
-  console.log('取消添加费用')
-}
-
-// 弹窗确认
-const handlePopupConfirm = () => {
-  console.log('确认添加费用')
-  // TODO: 这里添加表单验证和提交逻辑
-  // 提交成功后关闭弹窗
-  addFeePopup.value?.close()
-}
 
 const handleBack = () => {
   uni.navigateBack()
@@ -135,23 +288,31 @@ const handleStaffFilterChange = (
 
 const handleStaffFilterClose = () => {
   console.log('员工过滤器关闭', staffFilters.value)
+  houseParams.value.page = 1
+  getHouseListReq()
 }
 
-const handleStaffAction = (action: string, item: StaffAuthItem) => {
+const currentSelect = ref<any>({})
+
+const handleStaffAction = (action: any, item: any) => {
   console.log('员工操作11111111:', action)
+  currentSelect.value = item
   switch (action) {
     case 'view': //跟进记录
       uni.navigateTo({
-        url: '/pagesMy/authentication/followRecord',
+        url: `/pagesMy/authentication/followRecord?house_list_id=${item.id}&title=${item.house_title}`,
       })
       break
     case 'sign':
       uni.navigateTo({
-        url: '/pagesMy/authentication/sign',
+        url: '/pagesMy/authentication/sign?house_list_id=${item.id}',
       })
       break
     case 'edit':
       console.log('编辑')
+      uni.navigateTo({
+        url: `/pagesMy/siteInspection/index?house_list_id=${item.id}`,
+      })
       break
     case 'enable':
       console.log('卖用')
@@ -179,7 +340,7 @@ const handleStaffAction = (action: string, item: StaffAuthItem) => {
       break
     case 'fee': //费用
       uni.navigateTo({
-        url: '/pagesMy/authentication/fee',
+        url: `/pagesMy/authentication/fee?house_list_id=${item.id}`,
       })
       break
     case 'procedure': //手续管理
@@ -187,7 +348,7 @@ const handleStaffAction = (action: string, item: StaffAuthItem) => {
         url: '/pagesMy/authentication/procedure',
       })
       break
-    case 'on': //上架
+    case 'online': //上架
       addFeePopup.value?.open()
       break
     case 'return': //回款记录
@@ -198,34 +359,30 @@ const handleStaffAction = (action: string, item: StaffAuthItem) => {
   }
 }
 // 列表数据
-const staffList = ref<StaffAuthItem[]>([
-  {
-    id: 1,
-    image: 'https://pcapi-xiaofangzi-front-devtest.itheima.net/miniapp/uploads/goods_preview_1.jpg',
-    title: '封闭小区高档社区 简装 近公园 交通便利',
-    code: '620038',
-    district: '天朗御湖',
-    datetime: '2025.09.04 10:00:00',
-    status: ['待签约', '装修中'],
-  },
-])
+const staffList = ref<StaffAuthItem[]>([])
 
-const handleStaffItemClick = (item: StaffAuthItem) => {
+const handleStaffItemClick = (item: any) => {
   console.log('点击员工列表项:', item)
 }
 
 const staffListLoading = ref(false)
 const staffHasMore = ref(true)
+const staffRefreshing = ref(false)
 
 const handleStaffLoadMore = () => {
-  console.log('员工列表触底加载更多')
-  staffListLoading.value = true
-  // TODO: 调用接口加载更多数据
-  setTimeout(() => {
-    staffListLoading.value = false
-    // 模拟数据加载完毕
-    // staffHasMore.value = false
-  }, 1000)
+  if (!staffHasMore.value || staffListLoading.value) return
+
+  console.log('员工列表触底加载更多======')
+  houseParams.value.page++
+  getHouseListReq()
+}
+
+// 下拉刷新
+const handleStaffRefresh = async () => {
+  staffRefreshing.value = true
+  houseParams.value.page = 1
+  await getHouseListReq()
+  staffRefreshing.value = false
 }
 
 const currentStaffActions = ref([
@@ -241,63 +398,64 @@ const currentStaffActions = ref([
 ])
 
 // 过滤器配置
-const staffFilterConfigs: FilterConfig[] = [
+const staffFilterConfigs = ref<any[]>([
   {
     label: '下属员工',
-    options: [
-      { label: '天朗御湖', value: 'tianlang' },
-      { label: '阳光花园', value: 'yangguang' },
-      { label: '帮帮小区', value: 'bangbang' },
-      { label: '地铁新城', value: 'ditie' },
-    ],
+    options: [],
   },
   {
     label: '房源状态',
     options: [
-      { label: '在售', value: 'selling' },
-      { label: '装修中', value: 'decorating' },
-      { label: '已签约', value: 'signed' },
-      { label: '已下架', value: 'off' },
+      { title: '全部', id: '0' },
+      { title: '待签约', id: '16' },
+      { title: '已签约', id: '17' },
+      { title: '已到期', id: '1' },
+      { title: '装修中', id: '2' },
+
+      { title: '装修完成', id: '3' },
+      { title: '已售卖', id: '21' },
+      { title: '已上架', id: '18' },
+      { title: '未上架', id: '19' },
+      { title: '危险池', id: '8' },
     ],
   },
   {
     label: '审核状态',
-    // 平铺模式 options 必须存在，分组模式下给空数组
-    options: [],
+    options: [], //不能丢失
     groups: [
       {
         title: '装修交付审核',
-        key: 'delivery',
+        key: 'type',
         options: [
-          { label: '不限', value: 'all' },
-          { label: '待审核', value: 'pending' },
-          { label: '已通过', value: 'approved' },
-          { label: '已拒绝', value: 'rejected' },
+          { title: '全部', id: '0' },
+          { title: '待审核', id: '1' },
+          { title: '已审核', id: '2' },
+          { title: '已驳回', id: '3' },
         ],
       },
       {
         title: '上架审核',
-        key: 'listing',
+        key: 'put_type',
         options: [
-          { label: '不限', value: 'all' },
-          { label: '待审核', value: 'pending' },
-          { label: '已通过', value: 'approved' },
-          { label: '已拒绝', value: 'rejected' },
+          { title: '全部', id: '0' },
+          { title: '待审核', id: '1' },
+          { title: '已审核', id: '2' },
+          { title: '已驳回', id: '3' },
         ],
       },
       {
         title: '成交审核',
-        key: 'deal',
+        key: 'sale_type',
         options: [
-          { label: '不限', value: 'all' },
-          { label: '待审核', value: 'pending' },
-          { label: '已通过', value: 'approved' },
-          { label: '已拒绝', value: 'rejected' },
+          { title: '全部', id: '0' },
+          { title: '待审核', id: '1' },
+          { title: '已审核', id: '2' },
+          { title: '已驳回', id: '3' },
         ],
       },
     ],
   },
-]
+])
 </script>
 
 <style lang="scss" scoped>

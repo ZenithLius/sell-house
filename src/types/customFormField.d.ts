@@ -15,12 +15,13 @@ export type CustomFormField = {
     | 'line'
     | 'upload-video'
     | 'radio-group'
+    | 'select-multiple'
   placeholder?: string
   inputType?: 'text' | 'number' | 'idcard' | 'digit'
   password?: boolean
   unit?: string
   required?: boolean
-  options?: { label: string; value: any; phone?: string }[]
+  options?: { title?: string; id: any; nickname?: string; phone?: string; mobile?: string }[]
   maxCount?: number
   visible?: boolean | ((form: Record<string, any>) => boolean)
   showLabel?: boolean

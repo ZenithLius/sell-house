@@ -97,11 +97,12 @@
     },
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "wx1f81e7fcfc3a883f",
+        "appid" : "wx205c739117293e24",
         "setting" : {
             "minified" : true,
-            "urlCheck" : true
+            "urlCheck" : false
         },
+        "mergeVirtualHostAttributes" : true,
         // 启用组件按需注入
         "lazyCodeLoading" : "requiredComponents",
         "usingComponents" : true,

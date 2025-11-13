@@ -4,8 +4,10 @@ import { ref } from 'vue'
 interface StudyItem {
   id: string | number
   title: string
-  date: string
-  cover: string
+  create_time: string
+  add_time: string
+  cover_url: string
+  subtitle: string
 }
 
 const props = defineProps({
@@ -24,24 +26,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits<{
-  loadMore: []
   itemClick: [item: StudyItem]
 }>()
-
-const scrollTop = ref(0)
-const isLoadingMore = ref(false)
-
-// 触底加载
-const handleScrollToLower = () => {
-  if (isLoadingMore.value || !props.hasMore || props.loading) {
-    return
-  }
-  isLoadingMore.value = true
-  emit('loadMore')
-  setTimeout(() => {
-    isLoadingMore.value = false
-  }, 500)
-}
 
 // 点击列表项
 const handleItemClick = (item: StudyItem) => {
@@ -50,46 +36,40 @@ const handleItemClick = (item: StudyItem) => {
 </script>
 
 <template>
-  <scroll-view
-    class="study-list"
-    scroll-y
-    :scroll-top="scrollTop"
-    @scrolltolower="handleScrollToLower"
-  >
+  <view class="study-list">
     <view class="list-container">
       <view v-for="item in list" :key="item.id" class="study-item" @tap="handleItemClick(item)">
         <view class="item-left">
           <text class="item-title">{{ item.title }}</text>
-          <text class="item-date">{{ item.date }}</text>
+          <text class="item-date">{{ item.create_time }}</text>
         </view>
         <view class="item-right">
-          <image class="cover-image" :src="item.cover" mode="aspectFill" />
+          <image class="cover-image" :src="item.cover_url" mode="aspectFill" />
         </view>
       </view>
 
       <!-- 加载状态 -->
-      <view v-if="loading || isLoadingMore" class="loading-wrapper">
+      <view v-if="loading" class="loading-wrapper">
         <text class="loading-text">加载中...</text>
       </view>
 
       <!-- 没有更多数据 -->
       <view v-else-if="!hasMore && list.length > 0" class="no-more">
         <text class="no-more-text">没有更多了</text>
-        <view class="space" :style="{ height: '200rpx' }"></view>
       </view>
 
       <!-- 空状态 -->
       <view v-if="!loading && list.length === 0" class="empty-state">
         <text class="empty-text">暂无学习内容</text>
       </view>
+
+      <view class="space" :style="{ height: '100rpx' }"></view>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <style lang="scss" scoped>
 .study-list {
-  height: 100vh;
-  padding-bottom: var(--safe-area-bottom-padding);
   width: 100%;
 }
 

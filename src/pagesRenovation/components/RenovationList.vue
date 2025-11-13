@@ -31,7 +31,7 @@ export interface ActionButton {
 
 const props = defineProps({
   list: {
-    type: Array as () => RenovationItem[],
+    type: Array as () => any[],
     default: () => [],
   },
   loading: {
@@ -93,6 +93,21 @@ const getStatusClass = (status: string) => {
   }
   return ''
 }
+
+const getRenovationStatus = (status: number) => {
+  switch (status) {
+    case 0:
+      return '未施工'
+    case 1:
+      return '施工中'
+    case 2:
+      return '已完工'
+    case 3:
+      return '已交付'
+    default:
+      return '未知状态'
+  }
+}
 </script>
 
 <template>
@@ -106,15 +121,15 @@ const getStatusClass = (status: string) => {
       <view v-for="item in list" :key="item.id" class="renovation-item">
         <!-- 头部：日期时间和状态 -->
         <view class="item-header">
-          <text class="item-datetime">{{ item.datetime }}</text>
-          <text class="item-status" :class="{ 'status-completed': item.isCompleted }">{{
-            item.status
-          }}</text>
+          <text class="item-datetime">{{ item.created_time }}</text>
+          <text class="item-status" :class="{ 'status-completed': item.renovation_status == 2 }"
+            >{{ item.owner_task_title }}{{ getRenovationStatus(item.renovation_status) }}</text
+          >
         </view>
 
         <!-- 标题和标签 -->
         <view class="item-title-row">
-          <text class="item-title">{{ item.title }}</text>
+          <text class="item-title">{{ item.house_title }}</text>
           <!-- <view class="item-tags">
             <text v-for="(tag, index) in item.tags" :key="index" class="tag">{{ tag }}</text>
           </view> -->
@@ -124,15 +139,19 @@ const getStatusClass = (status: string) => {
         <view class="item-details">
           <view class="detail-row">
             <text class="detail-label">地址：</text>
-            <text class="detail-value">{{ item.address }}</text>
+            <text class="detail-value"
+              >{{ item.address }}{{ item.street_name }}{{ item.detail_building }}栋{{
+                item.detail_unit
+              }}单元{{ item.detail_room }}室</text
+            >
           </view>
           <view class="detail-row">
             <text class="detail-label">房间号：</text>
-            <text class="detail-value">{{ item.roomNumber }}</text>
+            <text class="detail-value">{{ item.detail_room }}</text>
           </view>
           <view class="detail-row">
             <text class="detail-label">负责人：</text>
-            <text class="detail-value">{{ item.worker }}-{{ item.workerPhone }}</text>
+            <text class="detail-value">{{ item.user_name }}-{{ item.user_mobile }}</text>
           </view>
         </view>
 

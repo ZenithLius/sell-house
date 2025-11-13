@@ -13,7 +13,9 @@
 
       <!-- 提示信息 -->
       <view class="tip-box">
-        <view class="tip-icon">ⓘ</view>
+        <view class="tip-icon">
+          <image class="tip-icon" src="/static/index/notice.png" mode="aspectFit"></image
+        ></view>
         <text class="tip-text">选择下面流程创建任务，可多选。</text>
       </view>
 
@@ -85,6 +87,38 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { getTaskListAPI } from './services'
+import { onShow } from '@dcloudio/uni-app'
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+onShow(() => {
+  getTaskListReq()
+})
+
+//  获取所有任务列表数据
+const getTaskListReq = async () => {
+  uni.showLoading({
+    title: '加载中',
+  })
+  const res = await getTaskListAPI({})
+  console.log('res====================', res)
+
+  // 将后台返回的数据转换为 TaskTag 格式
+  if (res.data && Array.isArray(res.data)) {
+    taskTags.value = res.data.map((item: any) => ({
+      id: item.id,
+      name: item.title,
+      selected: false,
+    }))
+  }
+
+  uni.hideLoading()
+}
 
 interface TaskTag {
   id: number
@@ -105,68 +139,6 @@ const newTagName = ref('')
 const isAllSelected = computed(() => {
   return taskTags.value.length > 0 && taskTags.value.every((tag) => tag.selected)
 })
-
-// 生成50个测试数据
-const generateMockTags = (): TaskTag[] => {
-  const tagNames = [
-    '墙面翻新',
-    '灯具安装',
-    '拆除',
-    '垃圾清运',
-    '厨房改造',
-    '门窗换新',
-    '踢脚线',
-    '吊顶',
-    '防水',
-    '卫生间贴砖',
-    '厨房贴砖',
-    '卫生间吊顶',
-    '厨房吊顶',
-    '客厅吊顶',
-    '电视墙',
-    '沙发背景墙',
-    '水路',
-    '电路',
-    '家具',
-    '地板铺设',
-    '瓷砖铺贴',
-    '木工制作',
-    '油漆涂刷',
-    '壁纸粘贴',
-    '窗帘安装',
-    '开关插座安装',
-    '灯具调试',
-    '洁具安装',
-    '橱柜安装',
-    '衣柜安装',
-    '门锁更换',
-    '玻璃安装',
-    '阳台封装',
-    '防盗网安装',
-    '空调安装',
-    '热水器安装',
-    '油烟机安装',
-    '燃气灶安装',
-    '洗衣机安装',
-    '冰箱摆放',
-    '电视安装',
-    '网络布线',
-    '监控安装',
-    '智能家居',
-    '新风系统',
-    '地暖铺设',
-    '中央空调',
-    '全屋定制',
-    '软装搭配',
-    '验收交付',
-  ]
-
-  return tagNames.map((name, index) => ({
-    id: index + 1,
-    name,
-    selected: false,
-  }))
-}
 
 // 切换标签选中状态
 const toggleTag = (id: number) => {
@@ -267,10 +239,10 @@ const handleBack = () => {
 }
 
 // 初始化
-onMounted(() => {
-  // 模拟从接口获取数据
-  taskTags.value = generateMockTags()
-})
+// onMounted(() => {
+//   // 模拟从接口获取数据
+//   taskTags.value = generateMockTags()
+// })
 </script>
 
 <style lang="scss" scoped>

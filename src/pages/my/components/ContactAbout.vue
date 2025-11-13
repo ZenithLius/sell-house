@@ -23,12 +23,14 @@ const handleClick = (type: string) => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/uni.scss';
 .contact-about {
-  margin: 40rpx 30rpx;
+  margin: 40rpx 30rpx 0rpx 30rpx;
   padding: 32rpx 32rpx 24rpx;
   display: flex;
   background: #ffffff;
   border-radius: 20rpx;
+  box-shadow: $uni-box-shadow;
 
   .contact-item {
     width: 20%;

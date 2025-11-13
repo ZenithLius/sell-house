@@ -32,7 +32,13 @@ const emit = defineEmits<{
   feedback: []
 }>()
 
-const isFollowed = ref(true)
+// Props
+const props = defineProps({
+  isFollowed: {
+    type: Boolean,
+    default: false,
+  },
+})
 
 const handleFollow = () => {
   emit('follow')

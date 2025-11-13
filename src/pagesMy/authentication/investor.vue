@@ -9,7 +9,7 @@
     />
 
     <view class="content" :style="{ paddingTop: safeAreaInsets!.top +40+ 'px' }">
-      <SearchBox v-model="searchKeyword" placeholder="搜索房源名称" @search="handleSearch" />
+      <SearchBox v-model="searchKeyword" placeholder="搜索投资人" @search="handleSearch" />
 
       <InvestorList
         :list="investorList"
@@ -19,14 +19,14 @@
         @loadMore="handleLoadMore"
         @select="handleSelectInvestor"
       />
-      <ShBottomBtns
-        :backgroundColor="'#fff'"
-        :paddingBottom="130"
-        :buttons="bottomButtons"
-        @click="handleButtonClick"
-      />
     </view>
-    <BottomTabbar />
+    <ShBottomBtns
+      :backgroundColor="'#ffffff'"
+      :paddingBottom="20"
+      :buttons="bottomButtons"
+      @click="handleButtonClick"
+    />
+    <!-- <BottomTabbar /> -->
   </view>
 </template>
 
@@ -35,17 +35,50 @@ import BottomTabbar from './components/BottomTabbar.vue'
 import InvestorList from './components/InvestorList.vue'
 import { ref } from 'vue'
 import SearchBox from './components/SearchBox.vue'
+import { investorListAPI, setInvestorAPI } from '../services/staff'
+import { onLoad } from '@dcloudio/uni-app'
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+
+onLoad((options) => {
+  houseListId.value = options?.house_list_id
+  getInvestorListReq()
+})
+
+/**
+ * ==================================搜索投资人========================================
+ */
+
+const handleSearch = (keyword: string) => {
+  console.log('搜索关键词:', keyword)
+  searchKeyword.value = keyword
+  getInvestorListReq()
+}
+
+const getInvestorListReq = async () => {
+  const params = {
+    keyword: searchKeyword.value,
+    type: 1,
+    // 1投资人，2经纪人，3装修负责人
+  }
+  const res = await investorListAPI(params)
+  investorList.value = res.data.list
+}
 
 interface InvestorItem {
   id: string | number
-  name: string
-  phone: string
+  nickname: string
+  mobile: string
 }
 
 const bottomButtons = [
   {
     text: '取消',
-    background: '#FFFFFF;',
+    background: '#fff',
     color: '#202020',
   },
   {
@@ -54,11 +87,47 @@ const bottomButtons = [
     color: '#ffffff',
   },
 ]
-const handleButtonClick = (index: number) => {
+
+const houseListId = ref<string | number | undefined>(undefined)
+const handleButtonClick = async (index: number) => {
   if (index === 0) {
     uni.navigateBack()
   } else if (index === 1) {
-    console.log('保存')
+    if (!houseListId.value) {
+      uni.showToast({
+        title: '房源ID不能为空',
+        icon: 'none',
+      })
+      return
+    }
+    if (!selectedInvestorId.value) {
+      uni.showToast({
+        title: '投资人ID不能为空',
+        icon: 'none',
+      })
+      return
+    }
+    uni.showLoading({
+      title: '保存中...',
+    })
+    const params = {
+      investor_id: selectedInvestorId.value,
+      house_list_id: houseListId.value,
+    }
+    const res = await setInvestorAPI(params)
+    uni.hideLoading()
+    if (res.code === 200) {
+      uni.showToast({
+        title: '保存成功',
+        icon: 'none',
+      })
+      uni.navigateBack()
+    } else {
+      uni.showToast({
+        title: '保存失败',
+        icon: 'none',
+      })
+    }
   }
 }
 const { safeAreaInsets } = uni.getSystemInfoSync()
@@ -75,27 +144,10 @@ const dateRange = ref({
 })
 
 // 投资人列表数据
-const investorList = ref<InvestorItem[]>([
-  { id: 1, name: '投资人1', phone: '1321245678' },
-  { id: 2, name: '投资人2', phone: '131***1234' },
-  { id: 3, name: '投资人3', phone: '131***1234' },
-  { id: 4, name: '投资人4', phone: '131***1234' },
-  { id: 5, name: '投资人5', phone: '131***1234' },
-  { id: 6, name: '投资人6', phone: '131***1234' },
-  { id: 7, name: '投资人7', phone: '131***1234' },
-  { id: 8, name: '投资人8', phone: '131***1234' },
-  { id: 9, name: '投资人9', phone: '131***1234' },
-  { id: 10, name: '投资人10', phone: '131***1234' },
-  { id: 11, name: '投资人11', phone: '131***1234' },
-  { id: 12, name: '投资人12', phone: '131***1234' },
-])
+const investorList = ref<InvestorItem[]>([])
 const loading = ref(false)
 const hasMore = ref(true)
 const selectedInvestorId = ref<string | number | undefined>(undefined)
-
-const handleSearch = (keyword: string) => {
-  console.log('搜索关键词:', keyword)
-}
 
 // 加载更多
 const handleLoadMore = () => {
@@ -108,8 +160,8 @@ const handleLoadMore = () => {
     for (let i = 0; i < 20; i++) {
       newData.push({
         id: startId + i,
-        name: `投资人${startId + i}`,
-        phone: '131***1234',
+        nickname: `投资人${startId + i}`,
+        mobile: '131***1234',
       })
     }
     investorList.value.push(...newData)

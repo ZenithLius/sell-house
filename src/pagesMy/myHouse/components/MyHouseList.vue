@@ -2,13 +2,16 @@
 import { ref } from 'vue'
 
 interface HouseItem {
-  id: string | number
   title: string
+  area: string
+  created_at: string
+  province_name: string
+  city_name: string
+  district_name: string
+  street_name: string
+  address: string
   price: string
-  area: string // 区域
-  size: string // 面积
-  address: string // 地址
-  date: string // 日期
+  add_time: string
 }
 
 const props = defineProps({
@@ -24,11 +27,20 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  refreshing: {
+    type: Boolean,
+    default: false,
+  },
+  currentType: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits<{
   loadMore: []
   itemClick: [item: HouseItem]
+  refresh: []
 }>()
 
 const scrollTop = ref(0)
@@ -50,6 +62,14 @@ const handleScrollToLower = () => {
 const handleItemClick = (item: HouseItem) => {
   emit('itemClick', item)
 }
+
+// 下拉刷新
+const onRefresh = () => {
+  emit('refresh')
+}
+
+// 刷新恢复
+const onRestore = () => {}
 </script>
 
 <template>
@@ -57,33 +77,42 @@ const handleItemClick = (item: HouseItem) => {
     class="house-list"
     scroll-y
     :scroll-top="scrollTop"
+    refresher-enabled
+    :refresher-triggered="refreshing"
+    @refresherrefresh="onRefresh"
+    @refresherrestore="onRestore"
     @scrolltolower="handleScrollToLower"
   >
     <view class="list-container">
-      <view v-for="item in list" :key="item.id" class="house-item" @tap="handleItemClick(item)">
+      <view
+        v-for="item in list"
+        :key="item.add_time"
+        class="house-item"
+        @tap="handleItemClick(item)"
+      >
         <!-- 标题和价格 -->
         <view class="item-header">
           <text class="item-title">{{ item.title }}</text>
-          <text class="item-price">{{ item.price }}</text>
+          <text class="item-price">{{ item.price }}万元</text>
         </view>
 
         <!-- 详细信息 -->
         <view class="item-details">
           <view class="detail-row">
             <text class="detail-label">区域：</text>
-            <text class="detail-value">{{ item.area }}</text>
+            <text class="detail-value">{{ item.province_name }} {{ item.city_name }} </text>
           </view>
           <view class="detail-row">
             <text class="detail-label">面积：</text>
-            <text class="detail-value">{{ item.size }}</text>
+            <text class="detail-value">{{ item.area }}m²</text>
           </view>
           <view class="detail-row">
             <text class="detail-label">地址：</text>
-            <text class="detail-value">{{ item.address }}</text>
+            <text class="detail-value">{{ item.district_name }} {{ item.street_name }}</text>
           </view>
           <view class="detail-row">
             <text class="detail-label">日期：</text>
-            <text class="detail-value">{{ item.date }}</text>
+            <text class="detail-value">{{ item.add_time }}</text>
           </view>
         </view>
       </view>
@@ -109,7 +138,7 @@ const handleItemClick = (item: HouseItem) => {
 
 <style lang="scss" scoped>
 .house-list {
-  height: calc(100vh - env(safe-area-inset-bottom));
+  height: calc(100vh - env(safe-area-inset-bottom) - 200rpx);
   width: 100%;
   background: #f5f5f5;
 }

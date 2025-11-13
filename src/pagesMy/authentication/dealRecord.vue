@@ -7,23 +7,31 @@
       :showBack="true"
       class="navbar-fixed"
     />
-    <view class="content" :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }">
+    <scroll-view
+      class="content"
+      :style="{ paddingTop: safeAreaInsets!.top + 40 + 'px' }"
+      scroll-y
+      refresher-enabled
+      :refresher-triggered="isTriggered"
+      @refresherrefresh="onRefresherrefresh"
+      @scrolltolower="handleScrollToLower"
+    >
       <DealRecordList
-        :list="recordList"
-        :loading="loading"
+        :list="list"
+        :loading="isLoading"
         :hasMore="hasMore"
-        @loadMore="loadMore"
         @itemClick="handleItemClick"
         @audit="handleAudit"
       />
-    </view>
+    </scroll-view>
 
     <!-- <BottomTabbar /> -->
-    <ShBottomTabbar />
+    <!-- <ShBottomTabbar /> -->
     <ShBottomBtns
       v-if="currentRole !== 'manager'"
       :buttons="bottomButtons"
       @click="handleButtonClick"
+      :paddingBottom="20"
       :backgroundColor="'#ffffff'"
     />
     <ShPopup
@@ -40,23 +48,74 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DealRecordList from './components/DealRecordList.vue'
-import BottomTabbar from './components/BottomTabbar.vue'
 import ShPopup from '@/components/ShPopup.vue'
 import type { CustomFormField } from '@/types/customFormField'
 import ShBottomTabbar from '@/components/ShBottomTabbar.vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { dealRecordListAPI } from '../services/staff'
+import { useScrollRefresh } from '@/composables/testUseScroller'
 interface DealRecordItem {
-  id: string | number
-  time: string
-  broker: string
-  dealPrice: string
-  agencyFee: string
-  dealBonus: string
-  auditStatus: string
-  auditTime?: string
-  failReason?: string
-  contractImages: string[]
+  agency_fee: string
+  agent_id: number
+  agent_name: string
+  award: string
+  create_time: string
+  created_at: string
+  examine_at: null
+  examine_time: string
+  mul_img: string[]
+  remark: string | null
+  status: string
+  total_price: string
+  transaction_status_id: number
+  transaction_status_name: string
 }
 const currentRole = uni.getStorageSync('currentOtherManageType')
+
+/**
+ * ==========================================================================
+ *                                 @异步请求相关
+ * ==========================================================================
+ */
+const houseListId = ref<string | number>('')
+onLoad((options) => {
+  houseListId.value = options?.house_list_id || ''
+})
+onShow(async () => {
+  await refresh()
+})
+
+/**
+ * ===================================获取成交列表=======================================
+ */
+
+// 定义数据获取函数
+const fetchDealRecordData = async (page: number) => {
+  uni.showLoading({
+    title: '加载中',
+  })
+  const res = await dealRecordListAPI({
+    house_list_id: houseListId.value,
+    page,
+    per_page: 10,
+  })
+  uni.hideLoading()
+  if (res.code === 200) {
+    const processedList = res.data.list.map((item: any) => ({
+      ...item,
+      mul_img: item.mul_img ? item.mul_img.split(',') : [],
+    }))
+    return processedList
+  }
+  return []
+}
+
+const { list, isLoading, hasMore, isTriggered, onRefresherrefresh, handleScrollToLower, refresh } =
+  useScrollRefresh<DealRecordItem>({
+    fetchData: fetchDealRecordData,
+    pageSize: 10,
+    immediate: false,
+  })
 
 // 弹窗引用
 const addFeePopup = ref<InstanceType<typeof ShPopup> | null>(null)
@@ -69,8 +128,6 @@ const handlePopupCancel = () => {
 // 弹窗确认
 const handlePopupConfirm = () => {
   console.log('确认添加费用')
-  // TODO: 这里添加表单验证和提交逻辑
-  // 提交成功后关闭弹窗
   addFeePopup.value?.close()
 }
 
@@ -87,8 +144,8 @@ const fields: CustomFormField[] = [
     label: 'none',
     type: 'radio-group',
     options: [
-      { label: '审核通过', value: 'approved' },
-      { label: '审核驳回', value: 'rejected' },
+      { title: '审核通过', id: 'approved' },
+      { title: '审核驳回', id: 'rejected' },
     ],
   },
   {
@@ -111,117 +168,25 @@ const bottomButtons = [
 const handleButtonClick = (index: number) => {
   if (index === 0) {
     uni.navigateTo({
-      url: '/pagesMy/authentication/addDeal',
+      url: `/pagesMy/authentication/addDeal?house_list_id=${houseListId.value}`,
     })
   }
 }
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
-const recordList = ref<DealRecordItem[]>([
-  {
-    id: 1,
-    time: '2025.09.04 10:00:00',
-    broker: '张三',
-    dealPrice: '¥ 123456.00元',
-    agencyFee: '¥ 10222.00元',
-    dealBonus: '¥ 5000.00元',
-    auditStatus: '审核失败',
-    auditTime: '2025.09.01 10:00:00',
-    failReason: '失败原因文字说明',
-    contractImages: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    id: 2,
-    time: '2025.09.03 15:30:00',
-    broker: '李四',
-    dealPrice: '¥ 98000.00元',
-    agencyFee: '¥ 8000.00元',
-    dealBonus: '¥ 3000.00元',
-    auditStatus: '审核成功',
-    auditTime: '2025.09.02 09:00:00',
-    contractImages: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-  {
-    id: 2,
-    time: '2025.09.03 15:30:00',
-    broker: '李四',
-    dealPrice: '¥ 98000.00元',
-    agencyFee: '¥ 8000.00元',
-    dealBonus: '¥ 3000.00元',
-    auditStatus: '待审核',
-    auditTime: '2025.09.02 09:00:00',
-    contractImages: [
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-      'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-    ],
-  },
-])
-
-const loading = ref(false)
-const hasMore = ref(true)
-const currentPage = ref(1)
-
 const handleBack = () => {
   uni.navigateBack()
 }
 
-// 加载更多
-const loadMore = () => {
-  if (loading.value || !hasMore.value) {
-    return
-  }
-
-  loading.value = true
-
-  // 模拟API请求
-  setTimeout(() => {
-    const newData: DealRecordItem[] = [
-      {
-        id: recordList.value.length + 1,
-        time: '2025.09.02 14:20:00',
-        broker: '王五',
-        dealPrice: '¥ 156000.00元',
-        agencyFee: '¥ 12000.00元',
-        dealBonus: '¥ 6000.00元',
-        auditStatus: '审核中',
-        contractImages: [
-          'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-          'https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg',
-        ],
-      },
-    ]
-
-    recordList.value.push(...newData)
-    currentPage.value++
-
-    // 模拟没有更多数据
-    if (currentPage.value >= 4) {
-      hasMore.value = false
-    }
-
-    loading.value = false
-  }, 1000)
-}
-
 // 点击记录项
-const handleItemClick = (item: DealRecordItem) => {
+const handleItemClick = (item: any) => {
   console.log('点击了记录项:', item)
   // 可以在这里跳转到详情页等
 }
 
 // 处理审核
-const handleAudit = (item: DealRecordItem) => {
+const handleAudit = (item: any) => {
   addFeePopup.value?.open()
 }
 </script>
@@ -242,7 +207,7 @@ const handleAudit = (item: DealRecordItem) => {
 }
 
 .content {
-  height: 100%;
+  height: calc(100vh - env(safe-area-inset-bottom) - 100rpx);
   display: flex;
   flex-direction: column;
 }

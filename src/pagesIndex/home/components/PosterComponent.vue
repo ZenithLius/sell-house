@@ -133,7 +133,7 @@ const drawEllipsisText = (ctx: any, text: string, x: number, y: number, maxWidth
   ctx.fillText(out + suffix, x, y)
 }
 
-// 虚线（兼容）
+// 虚线
 const drawDashedLine = (
   ctx: any,
   x1: number,
@@ -172,65 +172,55 @@ const drawDashedLine = (
   }
 }
 
-// 简化版生成海报（先测试基础功能）
+// 简化版生成海报
 const generateSimplePoster = async () => {
   try {
-    debugMsg.value = '开始绘制...'
-    console.log('===== 开始生成海报 =====')
-
     const ctx = uni.createCanvasContext('posterCanvas', self)
     ctx.setTextBaseline('top')
 
     // 1. 绘制背景图（本地图片）
-    console.log('1. 绘制背景图')
-    debugMsg.value = '绘制背景图...'
-
-    // 使用本地背景图，路径根据你的项目调整
-    // 如果背景图在 static 文件夹，路径是 /static/poster-bg.png
     const bgPath = '/static/index/poster-bg.png'
     ctx.drawImage(bgPath, 0, 0, canvasWidth, canvasHeight)
 
     // 2. 标题与布局
-    // ===== 可调样式参数（集中入口，单位除特别说明外均为 rpx）=====
-    // — 画布与网格内边距/间距
-    const PADDING_X_RPX = 40 // 左右内边距（改大→整体更窄，改小→更宽）
-    const PADDING_TOP_RPX = 50 // 顶部内边距（标题距画布顶部）
-    const COL_GAP_RPX = 30 // 两列图片之间的水平间距
-    const ROW_GAP_RPX = 30 // 行与行之间的垂直间距
-    const GRID_CELL_HEIGHT_RATIO = 0.82 // 图片单元的高宽比：cellH = cellW * 该系数
+
+    const PADDING_X_RPX = 40
+    const PADDING_TOP_RPX = 50
+    const COL_GAP_RPX = 30
+    const ROW_GAP_RPX = 30
+    const GRID_CELL_HEIGHT_RATIO = 0.82
 
     // — 标题样式
-    const TITLE_FONT_RPX = 30 // 标题字号
-    const TITLE_LINE_RPX = 38 // 标题行高（用于计算网格起始 Y）
-    const TITLE_MARGIN_BOTTOM_RPX = 12 // 标题与图片网格之间的间距
+    const TITLE_FONT_RPX = 30
+    const TITLE_LINE_RPX = 38
+    const TITLE_MARGIN_BOTTOM_RPX = 12
 
-    // — 上排图片样式（带边框）
-    const TOP_ROW_RADIUS_RPX = 10 // 圆角大小
-    const TOP_ROW_BORDER_WIDTH_PX = 1 // 边框粗细（px 像素单位）
+    // — 上排图片样式
+    const TOP_ROW_RADIUS_RPX = 10
+    const TOP_ROW_BORDER_WIDTH_PX = 1
 
-    // — 下排图片样式（无边框，仅圆角裁剪）
-    const BOTTOM_ROW_RADIUS_PX = 8 // 圆角（px）
+    // — 下排图片样式
+    const BOTTOM_ROW_RADIUS_PX = 8
 
     // — 分割线与间距
-    const DIVIDER_GAP_RPX = 50 // 图片网格底部到分割线的间距
-    const DASH_RPX = 6 // 分割线短划长度
-    const GAP_RPX = 6 // 分割线间隔长度
+    const DIVIDER_GAP_RPX = 50
+    const DASH_RPX = 6
+    const GAP_RPX = 6
 
-    // — 底部信息（粗体一行+小字一行）与二维码
-    const INFO_FONT_RPX = 29 // 粗体行字号（价格 | 户型 | 面积）
-    const INFO_MARGIN_TOP_RPX = 80 // 分割线到底部粗体行的垂直间距
-    const SMALL_FONT_RPX = 20 // 小字字号（“扫码关注查看更多好房”）
-    const SMALL_FONT_MARGIN_TOP_RPX = 50 // 粗体行到小字的垂直间距
-    const INFO_QR_SIZE_RPX = 116 // 右侧二维码尺寸
-    const INFO_QR_TOP_OFFSET_RPX = 50 // 二维码顶部距离分割线的垂直间距
-    const QR_TEXT_RESERVE_RPX = 16 // 为避免文字压到二维码，文本右侧额外预留空间
+    // — 底部信息与二维码
+    const INFO_FONT_RPX = 29
+    const INFO_MARGIN_TOP_RPX = 80
+    const SMALL_FONT_RPX = 20
+    const SMALL_FONT_MARGIN_TOP_RPX = 50
+    const INFO_QR_SIZE_RPX = 116
+    const INFO_QR_TOP_OFFSET_RPX = 50
+    const QR_TEXT_RESERVE_RPX = 16
 
     // ===== 将 rpx 转为 px（实际绘制使用 px）=====
     const paddingX = Math.round(PADDING_X_RPX * rpx)
     const paddingTop = Math.round(PADDING_TOP_RPX * rpx)
     const colGap = Math.round(COL_GAP_RPX * rpx)
     const rowGap = Math.round(ROW_GAP_RPX * rpx)
-    console.log('2. 绘制标题')
     debugMsg.value = '绘制标题...'
     ctx.fillStyle = '#030509'
     // 标题字号（修改 TITLE_FONT_RPX 即可）
@@ -240,26 +230,18 @@ const generateSimplePoster = async () => {
     const titleMaxWidth = canvasWidth - paddingX * 2
     drawEllipsisText(ctx, posterData.value.title, titleX, titleY, titleMaxWidth)
 
-    // 3. 图片网格（2列等宽，3行）
-    console.log('3. 绘制图片网格')
-    debugMsg.value = '下载图片中...'
-    // 图片网格起始 Y：标题行高 + 标题与网格间距（修改 TITLE_LINE_RPX / TITLE_MARGIN_BOTTOM_RPX）
+    // 3. 图片网格
+
     const gridTop =
       titleY + Math.round(TITLE_LINE_RPX * rpx) + Math.round(TITLE_MARGIN_BOTTOM_RPX * rpx)
     const cellW = Math.floor((canvasWidth - paddingX * 2 - colGap) / 2)
-    // 单元格高度：cellW * 比例（修改 GRID_CELL_HEIGHT_RATIO）
     const cellH = Math.floor(cellW * GRID_CELL_HEIGHT_RATIO)
 
     // 逐个下载并绘制
     for (let i = 0; i < Math.min(posterData.value.images.length, 6); i++) {
       try {
-        debugMsg.value = `下载图片 ${i + 1}/6...`
         const url = posterData.value.images[i]
-        console.log(`下载第${i + 1}张图片:`, url)
-
         const localPath = await downloadImage(url)
-        console.log(`第${i + 1}张下载成功，开始绘制`)
-
         const row = Math.floor(i / 2)
         const col = i % 2
         const x = paddingX + col * (cellW + colGap)
@@ -279,35 +261,17 @@ const generateSimplePoster = async () => {
         ctx.clip()
         ctx.drawImage(localPath, x, y, cellW, cellH)
         ctx.restore()
-
-        console.log(`第${i + 1}张绘制完成`)
       } catch (error) {
-        console.error(`第${i + 1}张图片失败:`, error)
+        console.error('图片绘制失败:', error)
       }
     }
 
     // 5. 绘制分割线
-    console.log('5. 绘制分割线')
     ctx.strokeStyle = '#E5D5FF'
     ctx.lineWidth = 1
-    // 图片网格底部与分割线位置（修改 DIVIDER_GAP_RPX 调整分割线上下位置）
     const gridBottom = gridTop + cellH * 3 + rowGap * 2
     const dividerY = gridBottom + Math.round(DIVIDER_GAP_RPX * rpx)
-    // 分割线的 dash/gap 可通过 DASH_RPX/GAP_RPX 调整
-    // drawDashedLine(
-    //   ctx,
-    //   paddingX,
-    //   dividerY,
-    //   canvasWidth - paddingX,
-    //   dividerY,
-    //   Math.max(4, Math.round(DASH_RPX * rpx)),
-    //   Math.max(4, Math.round(GAP_RPX * rpx)),
-    // )
-
     // 6. 底部信息（仅一行：价格 | 户型 | 面积）
-    console.log('6. 绘制底部信息')
-    debugMsg.value = '绘制信息...'
-    // 粗体信息行 Y（修改 INFO_MARGIN_TOP_RPX 调整与分割线间距）
     const infoY = dividerY + Math.round(INFO_MARGIN_TOP_RPX * rpx)
     ctx.fillStyle = '#030509'
     // 粗体信息字号（修改 INFO_FONT_RPX）
@@ -328,34 +292,19 @@ const generateSimplePoster = async () => {
     )
 
     // 7. 下载并绘制二维码
-    console.log('7. 处理二维码')
-    debugMsg.value = '下载二维码...'
-    // 二维码尺寸与位置（修改 INFO_QR_SIZE_RPX / INFO_QR_TOP_OFFSET_RPX）
     const qrSize = Math.round(INFO_QR_SIZE_RPX * rpx)
     const qrX = canvasWidth - qrSize - paddingX
     const qrY = dividerY + Math.round(INFO_QR_TOP_OFFSET_RPX * rpx)
 
     try {
       const qrPath = await downloadImage(posterData.value.qrcode)
-      console.log('二维码下载成功')
-
       // 直接绘制二维码（无白边）
       ctx.drawImage(qrPath, qrX, qrY, qrSize, qrSize)
     } catch (error) {
       console.error('二维码下载失败:', error)
     }
 
-    // 取消底部小字说明，仅保留二维码
-
-    // 取消来源编号，不再绘制
-
-    // 9. 执行绘制
-    console.log('8. 执行draw')
-    debugMsg.value = '渲染中...'
     ctx.draw(false, () => {
-      console.log('9. 开始转换图片')
-      debugMsg.value = '转换图片...'
-
       uni.canvasToTempFilePath(
         {
           canvasId: 'posterCanvas',
@@ -368,14 +317,10 @@ const generateSimplePoster = async () => {
           fileType: 'png',
           quality: 1,
           success: (res) => {
-            console.log('✅ 成功!', res.tempFilePath)
             posterImage.value = res.tempFilePath
-            debugMsg.value = '生成成功！'
             uni.showToast({ title: '生成成功', icon: 'success' })
           },
           fail: (err) => {
-            console.error('❌ 失败:', err)
-            debugMsg.value = `失败: ${err.errMsg}`
             uni.showToast({ title: '生成失败', icon: 'none' })
           },
         },
@@ -383,8 +328,6 @@ const generateSimplePoster = async () => {
       )
     })
   } catch (error: any) {
-    console.error('❌ 错误:', error)
-    debugMsg.value = `错误: ${error.message}`
     uni.showToast({ title: '生成失败', icon: 'none' })
   }
 }
@@ -429,10 +372,11 @@ const saveImageToPhotosAlbum = () => {
     filePath: posterImage.value,
     success: () => {
       uni.showToast({ title: '已保存到相册', icon: 'success' })
+      closePoster()
     },
     fail: (err) => {
-      console.error('保存失败:', err)
       uni.showToast({ title: '保存失败', icon: 'none' })
+      closePoster()
     },
   })
 }
@@ -471,7 +415,7 @@ defineExpose({
 .poster-content {
   position: relative;
   background: transparent;
-  border-radius: 4px; /* 整体海报圆角大小，可改为 16px、20px 等 */
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }

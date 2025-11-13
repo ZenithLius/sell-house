@@ -43,7 +43,7 @@ const fields: CustomFormField[] = [
     label: '回款状态',
     type: 'select',
     placeholder: '请选择',
-    options: [{ label: '新城区', value: '1' }],
+    options: [{ title: '新城区', id: '1' }],
   },
   { key: 'communityName', label: '收房人', type: 'input', placeholder: '请输入' },
   { key: 'area', label: '出房人', type: 'input', placeholder: '请输入' },

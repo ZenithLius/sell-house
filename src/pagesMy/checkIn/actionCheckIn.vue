@@ -25,7 +25,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { CustomFormField } from '@/types/customFormField'
+import { onLoad } from '@dcloudio/uni-app'
+import { checkInAPI } from '../services/staff'
 const { safeAreaInsets } = uni.getSystemInfoSync()
+
+const currentType = ref('1')
+onLoad(() => {
+  const currentRole = uni.getStorageSync('currentOtherManageType')
+  if (currentRole === 'manager') {
+    currentType.value = '2'
+  } else {
+    currentType.value = '1'
+  }
+})
 const handleBack = () => {
   uni.navigateBack()
 }
@@ -38,21 +50,42 @@ const bottomButtons = [
   },
 ]
 
+const checkInReq = async () => {
+  uni.showLoading({
+    title: '提交中...',
+  })
+  const res = await checkInAPI({
+    pic_url: formData.value.pic_url.join(','),
+    type: '1', //1 员工 2 区域经理
+  })
+  uni.hideLoading()
+  if (res.code === 200) {
+    uni.showToast({
+      title: '提交成功',
+      icon: 'none',
+    })
+    handleBack()
+  } else {
+    uni.showToast({
+      title: '提交失败',
+      icon: 'none',
+    })
+  }
+}
+
 const handleButtonClick = (index: number) => {
   if (index === 0) {
-    console.log('保存/修改')
+    checkInReq()
   }
 }
 
 const formData = ref({
-  communityName: '',
-  area: '',
-  videourl: '',
+  pic_url: [],
 })
 
 const fields: CustomFormField[] = [
   {
-    key: 'communityName',
+    key: 'pic_url',
     label: '上传打卡照片',
     type: 'upload',
     placeholder: '请选择',
